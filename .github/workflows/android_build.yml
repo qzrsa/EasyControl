@@ -14,14 +14,17 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Setup JDK 17
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -33,23 +36,28 @@ jobs:
           echo "MY_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> keystore.properties
           echo "MY_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> keystore.properties
           echo "MY_KEYSTORE_PASSWORD=${{ secrets.STORE_PASSWORD }}" >> keystore.properties
-          mkdir -p easycontrolfork/app/
+
+          mkdir -p easycontrolfork/app
           echo "${{ secrets.SIGNING_KEY }}" | base64 -d > easycontrolfork/app/upload_keystore.jks
 
       - name: Grant execute permission for gradlew
         run: chmod +x easycontrolfork/gradlew
 
-      - name: Build Server and Copy Resource
+      - name: Build Server
         run: |
           cd easycontrolfork
-          ./gradlew :server:copyRelease
+          ./gradlew :server:copyRelease --no-daemon
 
       - name: Build App
         run: |
           cd easycontrolfork
-          ./gradlew :app:assembleRelease
+          ./gradlew :app:assembleRelease --no-daemon
 
-      - name: Generate Tag Name
+      - name: Show APK
+        run: |
+          ls -R easycontrolfork/app/build/outputs/
+
+      - name: Generate Tag
         id: tag
         run: |
           echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT

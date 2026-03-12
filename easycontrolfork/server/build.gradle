@@ -4,14 +4,14 @@ plugins {
 
 android {
   namespace 'com.daitj.easycontrolfork.server'
-  compileSdk 34
+  compileSdk 36
 
   defaultConfig {
     minSdk 21
-    targetSdk 34
+    targetSdk 36
     applicationId 'com.daitj.easycontrolfork.server'
-    versionCode 20001
-    versionName '2.0.1'
+    versionCode 30304
+    versionName '3.3.4'
   }
 
   buildTypes {

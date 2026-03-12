@@ -12,12 +12,12 @@ if (keystorePropertiesFile.exists()) {
 
 android {
   namespace 'com.daitj.easycontrolfork.app'
-  compileSdk 34
+  compileSdk 36
 
   defaultConfig {
     applicationId "com.daitj.easycontrolfork.app"
     minSdk 21
-    targetSdk 34
+    targetSdk 36
     versionCode 10004
     versionName "2.0.2"
     ndk {
