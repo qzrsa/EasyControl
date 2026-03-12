@@ -1,0 +1,16 @@
+keystore.properties
+
+easycontrolfork/*.iml
+easycontrolfork/.gradle
+easycontrolfork/.idea
+easycontrolfork/local.properties
+
+easycontrolfork/app/build
+easycontrolfork/app/.gradle
+easycontrolfork/app/debug
+easycontrolfork/app/release
+easycontrolfork/app/src/main/res/raw/easycontrolfork_server.jar
+
+easycontrolfork/server/build
+easycontrolfork/server/.gradle
+
