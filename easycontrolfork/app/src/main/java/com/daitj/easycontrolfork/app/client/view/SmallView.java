@@ -13,6 +13,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 
 import java.nio.ByteBuffer;
@@ -85,6 +86,19 @@ public class SmallView extends ViewOutlineProvider {
     // 显示
     AppData.windowManager.addView(smallView.getRoot(), smallViewParams);
     smallView.textureViewLayout.addView(clientController.getTextureView(), 0);
+    // 视频布局完成后，把 nav_bar 宽度同步为视频实际宽度
+    smallView.textureViewLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+      @Override
+      public void onGlobalLayout() {
+        int videoWidth = smallView.textureViewLayout.getWidth();
+        if (videoWidth > 0) {
+          smallView.textureViewLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+          ViewGroup.LayoutParams lp = smallView.navBar.getLayoutParams();
+          lp.width = videoWidth;
+          smallView.navBar.setLayoutParams(lp);
+        }
+      }
+    });
     ViewTools.viewAnim(smallView.getRoot(), true, 0, PublicTools.dp2px(40f), null);
     isShow = true;
   }
@@ -276,6 +290,17 @@ public class SmallView extends ViewOutlineProvider {
     if (startX > screenSize.widthPixels - halfWidth) updateSite(screenSize.widthPixels - halfWidth - 50, startY);
     if (startY < statusBarHeight / 2) updateSite(startX, statusBarHeight);
     if (startY > screenSize.heightPixels - 100) updateSite(startX, screenSize.heightPixels - 200);
+  }
+
+  // 视频尺寸变化时同步更新 nav_bar 宽度
+  public void syncNavBarWidth() {
+    if (!isShow) return;
+    int videoWidth = smallView.textureViewLayout.getWidth();
+    if (videoWidth > 0) {
+      ViewGroup.LayoutParams lp = smallView.navBar.getLayoutParams();
+      lp.width = videoWidth;
+      smallView.navBar.setLayoutParams(lp);
+    }
   }
 
   @Override
