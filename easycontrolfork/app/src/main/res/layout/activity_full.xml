@@ -31,7 +31,7 @@
       android:id="@+id/nav_bar"
       android:layout_width="match_parent"
       android:layout_height="50dp"
-      android:background="@color/background"
+      android:background="@android:color/transparent"
       android:gravity="center_vertical"
       android:orientation="horizontal"
       android:paddingStart="10dp"
@@ -100,13 +100,14 @@
     android:layout_marginTop="50dp"
     android:layout_marginEnd="10dp"
     android:background="@drawable/background_cron"
+    android:backgroundTint="#CCFFFFFF"
     android:elevation="6dp"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="4dp">
 
     <LinearLayout
-      android:layout_width="160dp"
-      android:layout_height="40dp"
+      android:layout_width="120dp"
+      android:layout_height="30dp"
       android:orientation="horizontal">
 
       <ImageView
@@ -114,6 +115,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:background="@android:color/transparent"
         android:focusable="false"
         android:padding="4dp"
         android:src="@drawable/share"
@@ -124,6 +126,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:background="@android:color/transparent"
         android:focusable="false"
         android:padding="4dp"
         android:src="@drawable/minus"
@@ -134,6 +137,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:background="@android:color/transparent"
         android:focusable="false"
         android:padding="4dp"
         android:src="@drawable/window_restore"
@@ -144,6 +148,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:background="@android:color/transparent"
         android:focusable="false"
         android:padding="4dp"
         android:src="@drawable/x"
@@ -151,8 +156,8 @@
     </LinearLayout>
 
     <LinearLayout
-      android:layout_width="160dp"
-      android:layout_height="40dp"
+      android:layout_width="120dp"
+      android:layout_height="30dp"
       android:orientation="horizontal">
 
       <ImageView
@@ -160,6 +165,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:background="@android:color/transparent"
         android:focusable="false"
         android:padding="4dp"
         android:src="@drawable/horizontal_rotate"
@@ -170,6 +176,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:background="@android:color/transparent"
         android:focusable="false"
         android:padding="4dp"
         android:src="@drawable/not_equal"
@@ -180,6 +187,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:background="@android:color/transparent"
         android:focusable="false"
         android:padding="4dp"
         android:src="@drawable/power"
@@ -190,10 +198,13 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
+        android:background="@android:color/transparent"
         android:focusable="false"
         android:padding="4dp"
         android:src="@drawable/lightbulb_off"
         android:tint="@color/onCardBackground" />
     </LinearLayout>
+
   </LinearLayout>
+
 </FrameLayout>
