@@ -28,13 +28,15 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content" />
 
+    <!-- 小窗底部导航栏：只保留 返回 / 主页 / 多任务，按钮缩小、背景透明 -->
     <LinearLayout
       android:id="@+id/nav_bar"
       android:layout_width="match_parent"
-      android:layout_height="35dp"
+      android:layout_height="28dp"
       android:orientation="horizontal"
-      android:paddingStart="20dp"
-      android:paddingEnd="20dp"
+      android:paddingStart="12dp"
+      android:paddingEnd="12dp"
+      android:background="@android:color/transparent"
       tools:ignore="RtlSymmetry">
 
       <ImageView
@@ -43,7 +45,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="4dp"
+        android:padding="2dp"
         android:src="@drawable/caret_left"
         android:tint="@color/onCardBackground" />
 
@@ -53,7 +55,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="4dp"
+        android:padding="2dp"
         android:src="@drawable/o"
         android:tint="@color/onCardBackground" />
 
@@ -63,7 +65,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="4dp"
+        android:padding="2dp"
         android:src="@drawable/square"
         android:tint="@color/onCardBackground" />
 
@@ -209,4 +211,3 @@
     android:focusable="false" />
 
 </com.daitj.easycontrolfork.app.client.view.MyViewForSmallView>
-
