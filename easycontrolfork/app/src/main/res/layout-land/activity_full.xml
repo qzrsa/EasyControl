@@ -29,13 +29,13 @@
 
     <LinearLayout
       android:id="@+id/nav_bar"
-      android:layout_width="50dp"
+      android:layout_width="56dp"
       android:layout_height="match_parent"
       android:layout_gravity="end"
       android:background="@android:color/transparent"
       android:gravity="center"
       android:orientation="vertical"
-      android:paddingTop="60dp"
+      android:paddingTop="40dp"
       android:paddingBottom="20dp">
 
       <ImageView
@@ -44,7 +44,7 @@
         android:layout_height="0dp"
         android:layout_weight="2"
         android:focusable="false"
-        android:padding="10dp"
+        android:padding="6dp"
         android:src="@drawable/caret_left"
         android:tint="#FFFFFF" />
 
@@ -54,7 +54,7 @@
         android:layout_height="0dp"
         android:layout_weight="2"
         android:focusable="false"
-        android:padding="10dp"
+        android:padding="6dp"
         android:src="@drawable/o"
         android:tint="#FFFFFF" />
 
@@ -64,7 +64,7 @@
         android:layout_height="0dp"
         android:layout_weight="2"
         android:focusable="false"
-        android:padding="10dp"
+        android:padding="6dp"
         android:src="@drawable/square"
         android:tint="#FFFFFF" />
 
@@ -74,7 +74,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="10dp"
+        android:padding="6dp"
         android:src="@drawable/un_auto"
         android:tint="#FFFFFF" />
 
