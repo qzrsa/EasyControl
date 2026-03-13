@@ -3,10 +3,11 @@ name: Build and Release Android App
 on:
   workflow_dispatch:
     inputs:
-      release_note:
-        description: 'Release Note'
-        required: false
-        default: 'Manual Build'
+      app_version_name:
+        description: 'Version Name'
+        required: true
+        default: '2.0.X'
+        type: string
 
 jobs:
   build:
@@ -40,6 +41,17 @@ jobs:
           mkdir -p easycontrolfork/app
           echo "${{ secrets.SIGNING_KEY }}" | base64 -d > easycontrolfork/app/upload_keystore.jks
 
+      - name: Update Android Version
+        run: |
+          CURRENT_CODE=$(grep -oP 'versionCode\s+\K\d+' easycontrolfork/app/build.gradle | head -1)
+          NEW_CODE=$((CURRENT_CODE + 1))
+
+          sed -i "s/versionCode [0-9]\+/versionCode ${NEW_CODE}/" easycontrolfork/app/build.gradle
+          sed -i 's/versionName ".*"/versionName "${{ inputs.app_version_name }}"/' easycontrolfork/app/build.gradle
+
+          echo "New versionCode=${NEW_CODE}"
+          echo "New versionName=${{ inputs.app_version_name }}"
+
       - name: Grant execute permission for gradlew
         run: chmod +x easycontrolfork/gradlew
 
@@ -69,8 +81,8 @@ jobs:
           tag_name: ${{ steps.tag.outputs.release_tag }}
           name: EasyControl Release ${{ steps.tag.outputs.release_tag }}
           body: |
+            Version Name: ${{ inputs.app_version_name }}
             Build Date: ${{ steps.tag.outputs.release_date }}
-            Note: ${{ github.event.inputs.release_note }}
           draft: false
           prerelease: false
           files: |
