@@ -88,10 +88,11 @@
     android:layout_gravity="top|end"
     android:focusable="false"
     android:padding="2dp"
-    android:rotation="90"
     android:paddingTop="20dp"
+    android:rotation="90"
     android:src="@drawable/more"
-    android:tint="#FFFFFF" />
+    android:tint="#FFFFFF"
+    android:background="#88FF0000" />
 
   <LinearLayout
     android:id="@+id/bar_view"
