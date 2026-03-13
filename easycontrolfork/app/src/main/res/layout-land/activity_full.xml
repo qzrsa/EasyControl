@@ -35,8 +35,20 @@
       android:background="@android:color/transparent"
       android:gravity="center"
       android:orientation="vertical"
-      android:paddingTop="50dp"
+      android:paddingTop="10dp"
       android:paddingBottom="30dp">
+
+      <ImageView
+        android:id="@+id/button_more"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:focusable="false"
+        android:padding="12dp"
+        android:rotation="90"
+        android:src="@drawable/more"
+        android:tint="#FFFFFF"
+        android:background="@android:color/transparent" />
 
       <ImageView
         android:id="@+id/button_back"
@@ -80,19 +92,6 @@
 
     </LinearLayout>
   </LinearLayout>
-
-  <ImageView
-    android:id="@+id/button_more"
-    android:layout_width="40dp"
-    android:layout_height="60dp"
-    android:layout_gravity="top|end"
-    android:focusable="false"
-    android:padding="4dp"
-    android:paddingTop="20dp"
-    android:rotation="90"
-    android:src="@drawable/more"
-    android:tint="#FFFFFF"
-    android:background="@android:color/transparent" />
 
   <LinearLayout
     android:id="@+id/bar_view"
