@@ -50,7 +50,6 @@ public class ClientController implements TextureView.SurfaceTextureListener {
   private Pair<Integer, Integer> maxSize;
   private Pair<Integer, Integer> surfaceSize;
 
-  // 执行线程
   private final HandlerThread mainThread = new HandlerThread("easycontrol_client_main");
   private Handler mainHandler;
 
@@ -62,7 +61,6 @@ public class ClientController implements TextureView.SurfaceTextureListener {
     mainHandler = new Handler(mainThread.getLooper());
     textureView.setSurfaceTextureListener(this);
     setTouchListener();
-    // 启动子服务
     mainHandler.post(this::otherService);
   }
 
@@ -115,7 +113,8 @@ public class ClientController implements TextureView.SurfaceTextureListener {
           clientStream.writeToMain(ControlPacket.createRotateEvent());
           break;
         case "keepAlive":
-          clientStream.writeToMain(ControlPacket.createKeepAlive());
+          // 用 keepAlive 包的发送耗时近似作为链路延迟
+          clientStream.writeToMainWithLatency(ControlPacket.createKeepAlive());
           break;
         case "checkSizeAndSite":
           checkSizeAndSite();
@@ -195,9 +194,7 @@ public class ClientController implements TextureView.SurfaceTextureListener {
     }
   }
 
-  // 检查悬浮窗权限
   private boolean noFloatPermission() {
-    // 检查悬浮窗权限，防止某些设备如鸿蒙不兼容
     try {
       return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(AppData.applicationContext);
     } catch (Exception ignored) {
@@ -210,16 +207,12 @@ public class ClientController implements TextureView.SurfaceTextureListener {
       PublicTools.logToast("controller", AppData.applicationContext.getString(R.string.toast_float_per), true);
       return;
     }
-    // 获取当前APP
     String output = clientStream.runShell("dumpsys window | grep mCurrentFocus=Window");
-    // 创建匹配器
     Matcher matcher = Pattern.compile(" ([a-zA-Z0-9.]+)/").matcher(output);
-    // 进行匹配
     if (matcher.find()) {
       Device tempDevice = device.clone(String.valueOf(UUID.randomUUID()));
       tempDevice.name = "----";
       tempDevice.startApp = matcher.group(1);
-      // 为了错开界面
       tempDevice.smallX += 200;
       tempDevice.smallY += 200;
       tempDevice.smallLength -= 200;
@@ -278,7 +271,6 @@ public class ClientController implements TextureView.SurfaceTextureListener {
     AppData.uiHandler.post(() -> smallView.updateView(x, y));
   }
 
-  // 重新计算TextureView大小
   private void reCalculateTextureViewSize() {
     if (maxSize == null || videoSize == null) return;
     Pair<Integer, Integer> maxSize = this.maxSize;
@@ -286,26 +278,19 @@ public class ClientController implements TextureView.SurfaceTextureListener {
       if (videoSize.first < videoSize.second) maxSize = new Pair<>(this.maxSize.first, this.maxSize.first);
       else maxSize = new Pair<>(this.maxSize.second, this.maxSize.second);
     }
-    // 根据原画面大小videoSize计算在maxSize空间内的最大缩放大小
     int tmp1 = videoSize.second * maxSize.first / videoSize.first;
-    // 横向最大不会超出
     if (maxSize.second > tmp1) surfaceSize = new Pair<>(maxSize.first, tmp1);
-      // 竖向最大不会超出
     else surfaceSize = new Pair<>(videoSize.first * maxSize.second / videoSize.second, maxSize.second);
-    // 更新大小
     ViewGroup.LayoutParams layoutParams = textureView.getLayoutParams();
     layoutParams.width = surfaceSize.first;
     layoutParams.height = surfaceSize.second;
     textureView.setLayoutParams(layoutParams);
   }
 
-  // 检查画面是否超出
   private void checkSizeAndSite() {
-    // 碎碎念，感谢 波瑠卡 的关爱，今天一家四口一起去医院进年货去了，每人提了一袋子(´；ω；`)
     if (smallView != null) AppData.uiHandler.post(smallView::checkSizeAndSite);
   }
 
-  // 设置视频区域触摸监听
   @SuppressLint("ClickableViewAccessibility")
   private void setTouchListener() {
     textureView.setOnTouchListener((view, event) -> {
@@ -330,7 +315,6 @@ public class ClientController implements TextureView.SurfaceTextureListener {
     int y = (int) event.getY(i);
     int p = event.getPointerId(i);
     if (action == MotionEvent.ACTION_MOVE) {
-      // 减少发送小范围移动(小于4的圆内不做处理)
       int flipY = pointerList[10 + p] - y;
       if (flipY > -4 && flipY < 4) {
         int flipX = pointerList[p] - x;
@@ -342,7 +326,6 @@ public class ClientController implements TextureView.SurfaceTextureListener {
     handleAction("writeByteBuffer", ControlPacket.createTouchEvent(action, p, (float) x / surfaceSize.first, (float) y / surfaceSize.second, offsetTime), 0);
   }
 
-  // 剪切板
   private String nowClipboardText = "";
 
   private void checkClipBoard() {
@@ -369,7 +352,6 @@ public class ClientController implements TextureView.SurfaceTextureListener {
 
   @Override
   public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int i, int i1) {
-    // 初始化
     if (this.surfaceTexture == null) {
       this.surfaceTexture = surfaceTexture;
       handle.run();

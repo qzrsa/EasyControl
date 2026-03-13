@@ -17,6 +17,7 @@ public class ClientPlayer {
   private boolean isClose = false;
   private final ClientController clientController;
   private final ClientStream clientStream;
+  private final StatsOverlay statsOverlay;
   private final Thread mainStreamInThread = new Thread(this::mainStreamIn);
   private final Thread videoStreamInThread = new Thread(this::videoStreamIn);
   private Handler playHandler = null;
@@ -28,6 +29,7 @@ public class ClientPlayer {
   public ClientPlayer(String uuid, ClientStream clientStream) {
     clientController = Client.getClientController(uuid);
     this.clientStream = clientStream;
+    statsOverlay = clientStream.getStatsOverlay();
     if (clientController == null) return;
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       playHandlerThread.start();
@@ -35,6 +37,7 @@ public class ClientPlayer {
     }
     mainStreamInThread.start();
     videoStreamInThread.start();
+    if (statsOverlay != null) statsOverlay.show();
   }
 
   private void mainStreamIn() {
@@ -42,7 +45,6 @@ public class ClientPlayer {
     boolean useOpus = true;
     try {
       if (clientStream.readByteFromMain() == 1) useOpus = clientStream.readByteFromMain() == 1;
-      // 循环处理报文
       while (!Thread.interrupted()) {
         switch (clientStream.readByteFromMain()) {
           case AUDIO_EVENT:
@@ -75,7 +77,11 @@ public class ClientPlayer {
       ByteBuffer csd0 = clientStream.readFrameFromVideo();
       ByteBuffer csd1 = useH265 ? null : clientStream.readFrameFromVideo();
       videoDecode = new VideoDecode(videoSize, surface, csd0, csd1, playHandler);
-      while (!Thread.interrupted()) videoDecode.decodeIn(clientStream.readFrameFromVideo());
+      while (!Thread.interrupted()) {
+        ByteBuffer frame = clientStream.readFrameFromVideo();
+        if (statsOverlay != null) statsOverlay.onVideoFrame(frame.remaining());
+        videoDecode.decodeIn(frame);
+      }
     } catch (Exception ignored) {
     } finally {
       if (videoDecode != null) videoDecode.release();
@@ -85,6 +91,7 @@ public class ClientPlayer {
   public void close() {
     if (isClose) return;
     isClose = true;
+    if (statsOverlay != null) statsOverlay.hide();
     mainStreamInThread.interrupt();
     videoStreamInThread.interrupt();
     playHandlerThread.interrupt();

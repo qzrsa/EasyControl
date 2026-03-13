@@ -36,8 +36,14 @@ public class ClientStream {
 
   private static final int timeoutDelay = 1000 * 15;
 
+  // 统计信息覆盖层
+  private final StatsOverlay statsOverlay = new StatsOverlay();
+
+  public StatsOverlay getStatsOverlay() {
+    return statsOverlay;
+  }
+
   public ClientStream(Device device, MyInterface.MyFunctionBoolean handle) {
-    // 超时
     Thread timeOutThread = new Thread(() -> {
       try {
         Thread.sleep(timeoutDelay);
@@ -47,7 +53,6 @@ public class ClientStream {
       } catch (InterruptedException ignored) {
       }
     });
-    // 连接
     connectThread = new Thread(() -> {
       try {
         adb = AdbTools.connectADB(device);
@@ -65,7 +70,6 @@ public class ClientStream {
     timeOutThread.start();
   }
 
-  // 启动Server
   private void startServer(Device device) throws Exception {
     if (BuildConfig.ENABLE_DEBUG_FEATURE || !adb.runAdbCmd("ls /data/local/tmp/easycontrolfork_*").contains(serverName)) {
       adb.runAdbCmd("rm /data/local/tmp/easycontrolfork_* ");
@@ -85,7 +89,6 @@ public class ClientStream {
       + " startApp=" + device.startApp + " \n").getBytes()));
   }
 
-  // 连接Server
   private void connectServer(Device device) throws Exception {
     Thread.sleep(50);
     int reTry = 40;
@@ -111,17 +114,14 @@ public class ClientStream {
         } catch (Exception ignored) {
           if (mainSocket != null) mainSocket.close();
           if (videoSocket != null) videoSocket.close();
-          // 如果超时，直接跳出循环
           if (System.currentTimeMillis() - startTime >= timeoutDelay / 2 - 1000) i = reTry;
           else Thread.sleep(reTryTime);
         }
       }
     }
-    // 直连失败尝试ADB中转
     for (int i = 0; i < reTry; i++) {
       try {
         if (mainBufferStream == null) mainBufferStream = adb.tcpForward(device.serverPort);
-        // 为了减少adb同步阻塞的问题，此处分开音视频流
         if (videoBufferStream == null) videoBufferStream = adb.tcpForward(device.serverPort);
         return;
       } catch (Exception ignored) {
@@ -186,6 +186,17 @@ public class ClientStream {
   public void writeToMain(ByteBuffer byteBuffer) throws Exception {
     if (connectDirect) mainOutputStream.write(byteBuffer.array());
     else mainBufferStream.write(byteBuffer);
+  }
+
+  /**
+   * 发送 keepAlive 并测量 RTT 延迟，结果上报给 StatsOverlay
+   * 注意：需要在发送 keepAlive 前后计时，此处仅记录发送时间戳供外部调用
+   */
+  public void writeToMainWithLatency(ByteBuffer byteBuffer) throws Exception {
+    long start = System.currentTimeMillis();
+    writeToMain(byteBuffer);
+    long latency = System.currentTimeMillis() - start;
+    statsOverlay.onLatency(latency);
   }
 
   public void close() {
