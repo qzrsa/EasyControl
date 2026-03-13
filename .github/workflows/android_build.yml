@@ -8,6 +8,11 @@ on:
         required: true
         default: '2.0.X'
         type: string
+      note:
+        description: 'Update Note'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   build:
@@ -65,9 +70,12 @@ jobs:
           cd easycontrolfork
           ./gradlew :app:assembleRelease --no-daemon
 
-      - name: Show APK
+      - name: Rename APK
         run: |
-          ls -R easycontrolfork/app/build/outputs/
+          mkdir -p release
+          APK_PATH=$(find easycontrolfork/app/build/outputs/apk/release -name "*.apk" | head -1)
+          cp "$APK_PATH" release/EasyControl.apk
+          ls -l release
 
       - name: Generate Tag
         id: tag
@@ -83,9 +91,9 @@ jobs:
           body: |
             Version Name: ${{ inputs.app_version_name }}
             Build Date: ${{ steps.tag.outputs.release_date }}
+            Note: ${{ inputs.note }}
           draft: false
           prerelease: false
-          files: |
-            easycontrolfork/app/build/outputs/apk/release/*.apk
+          files: release/EasyControl.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
