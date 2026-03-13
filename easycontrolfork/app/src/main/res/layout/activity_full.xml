@@ -30,7 +30,7 @@
     <LinearLayout
       android:id="@+id/nav_bar"
       android:layout_width="match_parent"
-      android:layout_height="50dp"
+      android:layout_height="56dp"
       android:background="@android:color/transparent"
       android:gravity="center_vertical"
       android:orientation="horizontal"
@@ -43,7 +43,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="12dp"
+        android:padding="10dp"
         android:src="@drawable/caret_left"
         android:tint="@color/onBackground" />
 
@@ -53,7 +53,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="12dp"
+        android:padding="10dp"
         android:src="@drawable/o"
         android:tint="@color/onBackground" />
 
@@ -63,7 +63,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="12dp"
+        android:padding="10dp"
         android:src="@drawable/square"
         android:tint="@color/onBackground" />
 
@@ -73,7 +73,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="12dp"
+        android:padding="10dp"
         android:src="@drawable/un_auto"
         android:tint="@color/onCardBackground" />
 
@@ -204,7 +204,6 @@
         android:src="@drawable/lightbulb_off"
         android:tint="@color/onCardBackground" />
     </LinearLayout>
-
   </LinearLayout>
 
 </FrameLayout>
