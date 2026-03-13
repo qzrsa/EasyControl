@@ -30,12 +30,12 @@
     <LinearLayout
       android:id="@+id/nav_bar"
       android:layout_width="match_parent"
-      android:layout_height="56dp"
+      android:layout_height="48dp"
       android:background="@android:color/transparent"
       android:gravity="center_vertical"
       android:orientation="horizontal"
-      android:paddingStart="10dp"
-      android:paddingEnd="10dp">
+      android:paddingStart="4dp"
+      android:paddingEnd="4dp">
 
       <ImageView
         android:id="@+id/button_back"
@@ -43,7 +43,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="14dp"
+        android:padding="8dp"
         android:src="@drawable/caret_left"
         android:tint="#FFFFFF" />
 
@@ -53,7 +53,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="14dp"
+        android:padding="8dp"
         android:src="@drawable/o"
         android:tint="#FFFFFF" />
 
@@ -63,7 +63,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="14dp"
+        android:padding="8dp"
         android:src="@drawable/square"
         android:tint="#FFFFFF" />
 
@@ -73,7 +73,7 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="14dp"
+        android:padding="8dp"
         android:src="@drawable/un_auto"
         android:tint="#FFFFFF" />
 
