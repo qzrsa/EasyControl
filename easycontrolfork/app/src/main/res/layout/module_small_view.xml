@@ -14,21 +14,29 @@
     android:inputType="textVisiblePassword" />
 
   <LinearLayout
-    android:id="@+id/body"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="top|center_horizontal"
-    android:layout_margin="6dp"
-    android:background="@drawable/background_cron"
-    android:elevation="4dp"
     android:orientation="vertical">
 
-    <FrameLayout
-      android:id="@+id/texture_view_layout"
+    <!-- 小窗主体：视频画面，白色圆角卡片背景 -->
+    <LinearLayout
+      android:id="@+id/body"
       android:layout_width="wrap_content"
-      android:layout_height="wrap_content" />
+      android:layout_height="wrap_content"
+      android:layout_margin="6dp"
+      android:background="@drawable/background_cron"
+      android:elevation="4dp"
+      android:orientation="vertical">
 
-    <!-- 小窗底部导航栏：只保留 返回 / 主页 / 多任务，按钮缩小、背景透明 -->
+      <FrameLayout
+        android:id="@+id/texture_view_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <!-- 导航栏：返回/主页/多任务，在 body 外面所以背景真正透明 -->
     <LinearLayout
       android:id="@+id/nav_bar"
       android:layout_width="match_parent"
