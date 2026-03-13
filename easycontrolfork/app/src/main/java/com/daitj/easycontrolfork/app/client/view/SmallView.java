@@ -13,7 +13,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 
 import java.nio.ByteBuffer;
@@ -37,7 +36,6 @@ public class SmallView extends ViewOutlineProvider {
   private boolean isShow = false;
   private boolean light = true;
 
-  // 悬浮窗
   private final ModuleSmallViewBinding smallView = ModuleSmallViewBinding.inflate(LayoutInflater.from(AppData.applicationContext));
   private final WindowManager.LayoutParams smallViewParams =
     new WindowManager.LayoutParams(
@@ -56,22 +54,18 @@ public class SmallView extends ViewOutlineProvider {
     clientController = Client.getClientController(uuid);
     if (device == null || clientController == null) return;
     smallViewParams.gravity = Gravity.START | Gravity.TOP;
-    // 导航栏（返回/主页/多任务）始终显示
     smallView.navBar.setVisibility(View.VISIBLE);
-    // 设置监听控制
     setFloatVideoListener();
     setReSizeListener();
     setBarListener();
     setButtonListener();
     setKeyEvent();
-    // 设置圆角
     smallView.body.setOutlineProvider(this);
     smallView.body.setClipToOutline(true);
   }
 
   public void show() {
     if (device == null || clientController == null) return;
-    // 初始化
     smallView.barView.setVisibility(View.GONE);
     smallViewParams.x = device.smallX;
     smallViewParams.y = device.smallY;
@@ -81,24 +75,9 @@ public class SmallView extends ViewOutlineProvider {
       smallView.buttonSwitch.setVisibility(View.GONE);
       smallView.buttonApp.setVisibility(View.GONE);
     }
-    // 自定义分辨率(2:1)
     if (!device.customResolutionOnConnect && device.changeResolutionOnRunning) clientController.handleAction("writeByteBuffer", ControlPacket.createChangeResolutionEvent(0.5f), 0);
-    // 显示
     AppData.windowManager.addView(smallView.getRoot(), smallViewParams);
     smallView.textureViewLayout.addView(clientController.getTextureView(), 0);
-    // 视频布局完成后，把 nav_bar 宽度同步为视频实际宽度
-    smallView.textureViewLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-      @Override
-      public void onGlobalLayout() {
-        int videoWidth = smallView.textureViewLayout.getWidth();
-        if (videoWidth > 0) {
-          smallView.textureViewLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-          ViewGroup.LayoutParams lp = smallView.navBar.getLayoutParams();
-          lp.width = videoWidth;
-          smallView.navBar.setLayoutParams(lp);
-        }
-      }
-    });
     ViewTools.viewAnim(smallView.getRoot(), true, 0, PublicTools.dp2px(40f), null);
     isShow = true;
   }
@@ -113,7 +92,6 @@ public class SmallView extends ViewOutlineProvider {
     }
   }
 
-  // 设置焦点监听
   @SuppressLint("ClickableViewAccessibility")
   private void setFloatVideoListener() {
     smallView.getRoot().setOnTouchHandle(event -> {
@@ -132,7 +110,6 @@ public class SmallView extends ViewOutlineProvider {
     });
   }
 
-  // 设置上横条监听控制
   @SuppressLint("ClickableViewAccessibility")
   private void setBarListener() {
     AtomicBoolean isFilp = new AtomicBoolean(false);
@@ -171,7 +148,6 @@ public class SmallView extends ViewOutlineProvider {
     });
   }
 
-  // 设置按钮监听
   private void setButtonListener() {
     smallView.buttonBack.setOnClickListener(v -> clientController.handleAction("buttonBack", null, 0));
     smallView.buttonHome.setOnClickListener(v -> clientController.handleAction("buttonHome", null, 0));
@@ -213,7 +189,6 @@ public class SmallView extends ViewOutlineProvider {
     }));
   }
 
-  // 设置悬浮窗大小拖动按钮监听控制
   @SuppressLint("ClickableViewAccessibility")
   private void setReSizeListener() {
     smallView.reSize.setOnTouchListener((v, event) -> {
@@ -254,7 +229,6 @@ public class SmallView extends ViewOutlineProvider {
     return isShow;
   }
 
-  // 设置键盘监听
   private void setKeyEvent() {
     smallView.editText.setInputType(InputType.TYPE_NULL);
     smallView.editText.setOnKeyListener((v, keyCode, event) -> {
@@ -266,7 +240,6 @@ public class SmallView extends ViewOutlineProvider {
     });
   }
 
-  // 检查画面是否超出
   public void checkSizeAndSite() {
     if (!isShow) return;
     DisplayMetrics screenSize = PublicTools.getScreenSize();
@@ -290,17 +263,6 @@ public class SmallView extends ViewOutlineProvider {
     if (startX > screenSize.widthPixels - halfWidth) updateSite(screenSize.widthPixels - halfWidth - 50, startY);
     if (startY < statusBarHeight / 2) updateSite(startX, statusBarHeight);
     if (startY > screenSize.heightPixels - 100) updateSite(startX, screenSize.heightPixels - 200);
-  }
-
-  // 视频尺寸变化时同步更新 nav_bar 宽度
-  public void syncNavBarWidth() {
-    if (!isShow) return;
-    int videoWidth = smallView.textureViewLayout.getWidth();
-    if (videoWidth > 0) {
-      ViewGroup.LayoutParams lp = smallView.navBar.getLayoutParams();
-      lp.width = videoWidth;
-      smallView.navBar.setLayoutParams(lp);
-    }
   }
 
   @Override
