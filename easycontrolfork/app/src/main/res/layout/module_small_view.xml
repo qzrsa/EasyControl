@@ -13,32 +13,34 @@
     android:layout_marginTop="50dp"
     android:inputType="textVisiblePassword" />
 
-  <LinearLayout
+  <!--
+    body 使用 FrameLayout，这样 texture_view_layout 和 nav_bar 可以叠放
+    nav_bar 用 layout_gravity=bottom 直接钉在视频画面底部内部
+    body 宽度跟随 texture_view_layout（视频实际宽度）
+  -->
+  <FrameLayout
     android:id="@+id/body"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="top|center_horizontal"
     android:layout_margin="6dp"
     android:background="@drawable/background_cron"
-    android:elevation="4dp"
-    android:orientation="vertical">
+    android:elevation="4dp">
 
     <FrameLayout
       android:id="@+id/texture_view_layout"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content" />
 
-    <!--
-      nav_bar 宽度用 wrap_content 跟随 body，
-      实际宽度通过 SmallView.java 动态设置和 texture_view 一致
-    -->
+    <!-- 导航栏叠在视频底部，背景透明，图标白色小字号 -->
     <LinearLayout
       android:id="@+id/nav_bar"
       android:layout_width="match_parent"
-      android:layout_height="24dp"
+      android:layout_height="22dp"
+      android:layout_gravity="bottom"
       android:orientation="horizontal"
-      android:paddingStart="16dp"
-      android:paddingEnd="16dp"
+      android:paddingStart="20dp"
+      android:paddingEnd="20dp"
       android:background="@android:color/transparent"
       tools:ignore="RtlSymmetry">
 
@@ -48,9 +50,9 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="3dp"
+        android:padding="4dp"
         android:src="@drawable/caret_left"
-        android:tint="#CC000000" />
+        android:tint="#CCFFFFFF" />
 
       <ImageView
         android:id="@+id/button_home"
@@ -58,9 +60,9 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="3dp"
+        android:padding="4dp"
         android:src="@drawable/o"
-        android:tint="#CC000000" />
+        android:tint="#CCFFFFFF" />
 
       <ImageView
         android:id="@+id/button_switch"
@@ -68,12 +70,12 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="3dp"
+        android:padding="4dp"
         android:src="@drawable/square"
-        android:tint="#CC000000" />
+        android:tint="#CCFFFFFF" />
 
     </LinearLayout>
-  </LinearLayout>
+  </FrameLayout>
 
   <FrameLayout
     android:id="@+id/bar"
