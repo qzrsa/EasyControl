@@ -91,7 +91,7 @@
     android:rotation="90"
     android:paddingTop="20dp"
     android:src="@drawable/more"
-    android:tint="@color/onCardBackground" />
+    android:tint="#FFFFFF" />
 
   <LinearLayout
     android:id="@+id/bar_view"
