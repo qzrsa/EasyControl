@@ -148,7 +148,7 @@ public class FullActivity extends Activity implements SensorEventListener {
     activityFullBinding.navBar.setVisibility(isShow ? View.VISIBLE : View.GONE);
     activityFullBinding.buttonNavBar.setImageResource(isShow ? R.drawable.not_equal : R.drawable.equals);
     activityFullBinding.textureViewLayout.post(this::updateMaxSize);
-    activityFullBinding.buttonMore.setImageTintList(ColorStateList.valueOf(getResources().getColor(isShow ? R.color.onCardBackground : R.color.onBlackBacnground)));
+    activityFullBinding.buttonMore.setImageTintList(ColorStateList.valueOf(0xFFFFFFFF));
   }
 
   private void changeBarView() {
