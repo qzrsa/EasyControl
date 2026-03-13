@@ -14,8 +14,8 @@
     android:inputType="textVisiblePassword" />
 
   <!--
-    body: 包含视频和导航栏，背景设为透明
-    视频区域单独用一层 FrameLayout 加白色圆角卡片背景
+    body: 整个小窗圆角卡片，半透明白色背景
+    视频 + 导航栏全包在里面，无缝融合
   -->
   <LinearLayout
     android:id="@+id/body"
@@ -23,25 +23,24 @@
     android:layout_height="wrap_content"
     android:layout_gravity="top|center_horizontal"
     android:layout_margin="6dp"
-    android:background="@android:color/transparent"
+    android:background="@drawable/background_cron"
+    android:backgroundTint="#DDFFFFFF"
     android:elevation="4dp"
     android:orientation="vertical">
 
-    <!-- 视频画面圆角卡片 -->
     <FrameLayout
       android:id="@+id/texture_view_layout"
       android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:background="@drawable/background_cron" />
+      android:layout_height="wrap_content" />
 
-    <!-- 导航栏：返回/主页/多任务，紧贴视频下方，背景透明 -->
+    <!-- 导航栏：返回/主页/多任务，紧贴视频下方无缝融入 -->
     <LinearLayout
       android:id="@+id/nav_bar"
       android:layout_width="match_parent"
-      android:layout_height="28dp"
+      android:layout_height="24dp"
       android:orientation="horizontal"
-      android:paddingStart="12dp"
-      android:paddingEnd="12dp"
+      android:paddingStart="16dp"
+      android:paddingEnd="16dp"
       android:background="@android:color/transparent"
       tools:ignore="RtlSymmetry">
 
@@ -51,9 +50,9 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="2dp"
+        android:padding="3dp"
         android:src="@drawable/caret_left"
-        android:tint="@color/onCardBackground" />
+        android:tint="#CC000000" />
 
       <ImageView
         android:id="@+id/button_home"
@@ -61,9 +60,9 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="2dp"
+        android:padding="3dp"
         android:src="@drawable/o"
-        android:tint="@color/onCardBackground" />
+        android:tint="#CC000000" />
 
       <ImageView
         android:id="@+id/button_switch"
@@ -71,9 +70,9 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="2dp"
+        android:padding="3dp"
         android:src="@drawable/square"
-        android:tint="@color/onCardBackground" />
+        android:tint="#CC000000" />
 
     </LinearLayout>
   </LinearLayout>
