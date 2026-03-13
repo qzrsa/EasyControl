@@ -13,18 +13,23 @@
     android:layout_marginTop="50dp"
     android:inputType="textVisiblePassword" />
 
+  <!--
+    外层容器：将 body(卡片) 和 nav_bar(三键) 垂直排列
+    宽度用 wrap_content 跟随 body 实际宽度
+  -->
   <LinearLayout
+    android:id="@+id/body_with_nav"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="top|center_horizontal"
+    android:layout_margin="6dp"
     android:orientation="vertical">
 
-    <!-- 小窗主体：视频画面，白色圆角卡片背景 -->
+    <!-- 小窗主体：只包含视频画面，白色圆角卡片背景 -->
     <LinearLayout
       android:id="@+id/body"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_margin="6dp"
       android:background="@drawable/background_cron"
       android:elevation="4dp"
       android:orientation="vertical">
@@ -36,7 +41,7 @@
 
     </LinearLayout>
 
-    <!-- 导航栏：返回/主页/多任务，在 body 外面所以背景真正透明 -->
+    <!-- 导航栏：返回/主页/多任务，紧贴 body 下方，背景透明 -->
     <LinearLayout
       android:id="@+id/nav_bar"
       android:layout_width="match_parent"
