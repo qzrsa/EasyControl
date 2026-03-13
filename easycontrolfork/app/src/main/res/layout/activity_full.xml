@@ -86,7 +86,7 @@
     android:layout_height="60dp"
     android:layout_gravity="top|end"
     android:focusable="false"
-    android:padding="14dp"
+    android:padding="4dp"
     android:paddingTop="20dp"
     android:rotation="90"
     android:src="@drawable/more"
