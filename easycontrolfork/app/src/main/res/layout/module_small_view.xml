@@ -72,18 +72,18 @@
 
   <FrameLayout
     android:id="@+id/bar"
-    android:layout_width="120dp"
-    android:layout_height="30dp"
+    android:layout_width="96dp"
+    android:layout_height="24dp"
     android:layout_gravity="top|center_horizontal"
-    android:elevation="4dp">
+    android:elevation="6dp">
 
     <View
-      android:layout_width="56dp"
-      android:layout_height="6dp"
+      android:layout_width="46dp"
+      android:layout_height="5dp"
       android:layout_gravity="center_horizontal|bottom"
-      android:layout_marginBottom="8dp"
+      android:layout_marginBottom="6dp"
       android:background="@drawable/background_cron"
-      android:backgroundTint="#55000000"
+      android:backgroundTint="#66FFFFFF"
       android:focusable="false" />
   </FrameLayout>
 
@@ -92,15 +92,16 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="top|center_horizontal"
-    android:layout_marginTop="35dp"
-    android:background="@android:color/transparent"
-    android:elevation="2dp"
+    android:layout_marginTop="28dp"
+    android:background="@drawable/background_cron"
+    android:backgroundTint="#CCFFFFFF"
+    android:elevation="6dp"
     android:orientation="vertical"
     android:padding="4dp">
 
     <LinearLayout
-      android:layout_width="112dp"
-      android:layout_height="30dp"
+      android:layout_width="96dp"
+      android:layout_height="28dp"
       android:orientation="horizontal">
 
       <ImageView
@@ -149,8 +150,8 @@
     </LinearLayout>
 
     <LinearLayout
-      android:layout_width="112dp"
-      android:layout_height="30dp"
+      android:layout_width="96dp"
+      android:layout_height="28dp"
       android:orientation="horizontal">
 
       <ImageView
