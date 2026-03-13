@@ -13,10 +13,6 @@
     android:layout_marginTop="50dp"
     android:inputType="textVisiblePassword" />
 
-  <!--
-    body: 整个小窗圆角卡片，半透明白色背景
-    视频 + 导航栏全包在里面，无缝融合
-  -->
   <LinearLayout
     android:id="@+id/body"
     android:layout_width="wrap_content"
@@ -24,7 +20,7 @@
     android:layout_gravity="top|center_horizontal"
     android:layout_margin="6dp"
     android:background="@drawable/background_cron"
-    android:backgroundTint="#DDFFFFFF"
+    android:backgroundTint="#00FFFFFF"
     android:elevation="4dp"
     android:orientation="vertical">
 
@@ -33,7 +29,7 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content" />
 
-    <!-- 导航栏：返回/主页/多任务，紧贴视频下方无缝融入 -->
+    <!-- 导航栏：返回/主页/多任务 -->
     <LinearLayout
       android:id="@+id/nav_bar"
       android:layout_width="match_parent"
