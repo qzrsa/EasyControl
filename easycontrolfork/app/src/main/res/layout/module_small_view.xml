@@ -72,14 +72,14 @@
 
   <FrameLayout
     android:id="@+id/bar"
-    android:layout_width="96dp"
-    android:layout_height="24dp"
+    android:layout_width="84dp"
+    android:layout_height="22dp"
     android:layout_gravity="top|center_horizontal"
-    android:elevation="6dp">
+    android:elevation="5dp">
 
     <View
-      android:layout_width="46dp"
-      android:layout_height="5dp"
+      android:layout_width="40dp"
+      android:layout_height="4dp"
       android:layout_gravity="center_horizontal|bottom"
       android:layout_marginBottom="6dp"
       android:background="@drawable/background_cron"
@@ -92,16 +92,16 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="top|center_horizontal"
-    android:layout_marginTop="28dp"
+    android:layout_marginTop="26dp"
     android:background="@drawable/background_cron"
     android:backgroundTint="#CCFFFFFF"
-    android:elevation="6dp"
+    android:elevation="5dp"
     android:orientation="vertical"
-    android:padding="4dp">
+    android:padding="3dp">
 
     <LinearLayout
-      android:layout_width="96dp"
-      android:layout_height="28dp"
+      android:layout_width="84dp"
+      android:layout_height="26dp"
       android:orientation="horizontal">
 
       <ImageView
@@ -111,7 +111,7 @@
         android:layout_weight="1"
         android:background="@android:color/transparent"
         android:focusable="false"
-        android:padding="5dp"
+        android:padding="4dp"
         android:src="@drawable/share"
         android:tint="@color/onCardBackground" />
 
@@ -122,7 +122,7 @@
         android:layout_weight="1"
         android:background="@android:color/transparent"
         android:focusable="false"
-        android:padding="5dp"
+        android:padding="4dp"
         android:src="@drawable/minus"
         android:tint="@color/onCardBackground" />
 
@@ -133,7 +133,7 @@
         android:layout_weight="1"
         android:background="@android:color/transparent"
         android:focusable="false"
-        android:padding="5dp"
+        android:padding="4dp"
         android:src="@drawable/expand"
         android:tint="@color/onCardBackground" />
 
@@ -144,14 +144,14 @@
         android:layout_weight="1"
         android:background="@android:color/transparent"
         android:focusable="false"
-        android:padding="5dp"
+        android:padding="4dp"
         android:src="@drawable/x"
         android:tint="@color/alert" />
     </LinearLayout>
 
     <LinearLayout
-      android:layout_width="96dp"
-      android:layout_height="28dp"
+      android:layout_width="84dp"
+      android:layout_height="26dp"
       android:orientation="horizontal">
 
       <ImageView
@@ -161,7 +161,7 @@
         android:layout_weight="1"
         android:background="@android:color/transparent"
         android:focusable="false"
-        android:padding="5dp"
+        android:padding="4dp"
         android:src="@drawable/horizontal_rotate"
         android:tint="@color/onCardBackground" />
 
@@ -172,7 +172,7 @@
         android:layout_weight="1"
         android:background="@android:color/transparent"
         android:focusable="false"
-        android:padding="5dp"
+        android:padding="4dp"
         android:src="@drawable/not_equal"
         android:tint="@color/onCardBackground" />
 
@@ -183,7 +183,7 @@
         android:layout_weight="1"
         android:background="@android:color/transparent"
         android:focusable="false"
-        android:padding="5dp"
+        android:padding="4dp"
         android:src="@drawable/power"
         android:tint="@color/onCardBackground" />
 
@@ -194,7 +194,7 @@
         android:layout_weight="1"
         android:background="@android:color/transparent"
         android:focusable="false"
-        android:padding="5dp"
+        android:padding="4dp"
         android:src="@drawable/lightbulb_off"
         android:tint="@color/onCardBackground" />
     </LinearLayout>
@@ -209,3 +209,4 @@
     android:focusable="false" />
 
 </com.daitj.easycontrolfork.app.client.view.MyViewForSmallView>
+
