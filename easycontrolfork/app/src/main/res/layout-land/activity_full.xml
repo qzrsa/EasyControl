@@ -91,7 +91,7 @@
     android:paddingTop="20dp"
     android:rotation="90"
     android:src="@drawable/more"
-    android:imageTintList="#FFFFFF"
+    android:tint="#FFFFFF"
     android:background="@android:color/transparent" />
 
   <LinearLayout
