@@ -74,6 +74,18 @@ android {
   }
 }
 
+// Automatically build server before assembling the app
+project.afterEvaluate {
+  android.applicationVariants.all { variant ->
+    def variantName = variant.name.capitalize()
+    def assembleTask = tasks.findByName("assemble${variantName}")
+    def serverCopyTask = project(':server').tasks.findByName("copyRelease")
+    if (assembleTask != null && serverCopyTask != null) {
+      assembleTask.dependsOn(serverCopyTask)
+    }
+  }
+}
+
 dependencies {
   implementation 'androidx.documentfile:documentfile:1.0.1'
 }
