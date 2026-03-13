@@ -29,22 +29,22 @@
 
     <LinearLayout
       android:id="@+id/nav_bar"
-      android:layout_width="56dp"
+      android:layout_width="44dp"
       android:layout_height="match_parent"
       android:layout_gravity="end"
       android:background="@android:color/transparent"
       android:gravity="center"
       android:orientation="vertical"
-      android:paddingTop="40dp"
-      android:paddingBottom="20dp">
+      android:paddingTop="50dp"
+      android:paddingBottom="30dp">
 
       <ImageView
         android:id="@+id/button_back"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="2"
+        android:layout_weight="1"
         android:focusable="false"
-        android:padding="6dp"
+        android:padding="12dp"
         android:src="@drawable/caret_left"
         android:tint="#FFFFFF" />
 
@@ -52,9 +52,9 @@
         android:id="@+id/button_home"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="2"
+        android:layout_weight="1"
         android:focusable="false"
-        android:padding="6dp"
+        android:padding="12dp"
         android:src="@drawable/o"
         android:tint="#FFFFFF" />
 
@@ -62,9 +62,9 @@
         android:id="@+id/button_switch"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="2"
+        android:layout_weight="1"
         android:focusable="false"
-        android:padding="6dp"
+        android:padding="12dp"
         android:src="@drawable/square"
         android:tint="#FFFFFF" />
 
@@ -74,7 +74,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:focusable="false"
-        android:padding="6dp"
+        android:padding="12dp"
         android:src="@drawable/un_auto"
         android:tint="#FFFFFF" />
 
