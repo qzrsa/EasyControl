@@ -48,13 +48,13 @@
         android:tint="#FFFFFF" />
 
       <ImageView
-        android:id="@+id/button_back"
+        android:id="@+id/button_switch"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
         android:padding="12dp"
-        android:src="@drawable/caret_left"
+        android:src="@drawable/square"
         android:tint="#FFFFFF" />
 
       <ImageView
@@ -68,13 +68,13 @@
         android:tint="#FFFFFF" />
 
       <ImageView
-        android:id="@+id/button_switch"
+        android:id="@+id/button_back"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
         android:padding="12dp"
-        android:src="@drawable/square"
+        android:src="@drawable/caret_left"
         android:tint="#FFFFFF" />
 
       <ImageView

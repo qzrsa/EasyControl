@@ -27,10 +27,6 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content" />
 
-    <!--
-      nav_bar 用 wrap_content 宽度，图标固定 20dp，居中对齐在画面底部
-      这样不会撑大父 FrameLayout
-    -->
     <LinearLayout
       android:id="@+id/nav_bar"
       android:layout_width="wrap_content"
@@ -41,12 +37,12 @@
       tools:ignore="RtlSymmetry">
 
       <ImageView
-        android:id="@+id/button_back"
+        android:id="@+id/button_switch"
         android:layout_width="36dp"
         android:layout_height="match_parent"
         android:focusable="false"
         android:padding="5dp"
-        android:src="@drawable/caret_left"
+        android:src="@drawable/square"
         android:tint="#CCFFFFFF" />
 
       <ImageView
@@ -59,12 +55,12 @@
         android:tint="#CCFFFFFF" />
 
       <ImageView
-        android:id="@+id/button_switch"
+        android:id="@+id/button_back"
         android:layout_width="36dp"
         android:layout_height="match_parent"
         android:focusable="false"
         android:padding="5dp"
-        android:src="@drawable/square"
+        android:src="@drawable/caret_left"
         android:tint="#CCFFFFFF" />
 
     </LinearLayout>
