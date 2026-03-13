@@ -55,8 +55,8 @@ public class SmallView extends ViewOutlineProvider {
     clientController = Client.getClientController(uuid);
     if (device == null || clientController == null) return;
     smallViewParams.gravity = Gravity.START | Gravity.TOP;
-    // 设置默认导航栏状态
-    setNavBarHide(device.showNavBarOnConnect);
+    // 导航栏（返回/主页/多任务）始终显示
+    smallView.navBar.setVisibility(View.VISIBLE);
     // 设置监听控制
     setFloatVideoListener();
     setReSizeListener();
@@ -79,7 +79,6 @@ public class SmallView extends ViewOutlineProvider {
       smallView.buttonHome.setVisibility(View.GONE);
       smallView.buttonSwitch.setVisibility(View.GONE);
       smallView.buttonApp.setVisibility(View.GONE);
-      smallView.textureViewLayout.setPadding(0, PublicTools.dp2px(25f), 0, 0);
     }
     // 自定义分辨率(2:1)
     if (!device.customResolutionOnConnect && device.changeResolutionOnRunning) clientController.handleAction("writeByteBuffer", ControlPacket.createChangeResolutionEvent(0.5f), 0);
@@ -142,14 +141,11 @@ public class SmallView extends ViewOutlineProvider {
           int y = (int) event.getRawY();
           int flipX = x - xx.get();
           int flipY = y - yy.get();
-          // 适配一些机器将点击视作小范围移动(小于4的圆内不做处理)
           if (!isFilp.get()) {
             if (flipX * flipX + flipY * flipY < 16) return true;
             isFilp.set(true);
           }
-          // 拖动限制，避免拖到状态栏
           if (y < statusBarHeight + 10) return true;
-          // 更新
           updateSite(paramsX.get() + flipX, paramsY.get() + flipY);
           break;
         }
@@ -178,7 +174,9 @@ public class SmallView extends ViewOutlineProvider {
       changeBarView();
     });
     smallView.buttonNavBar.setOnClickListener(v -> {
-      setNavBarHide(smallView.navBar.getVisibility() == View.GONE);
+      boolean nowVisible = smallView.navBar.getVisibility() == View.VISIBLE;
+      smallView.navBar.setVisibility(nowVisible ? View.GONE : View.VISIBLE);
+      smallView.buttonNavBar.setImageResource(nowVisible ? R.drawable.equals : R.drawable.not_equal);
       changeBarView();
     });
     smallView.buttonPower.setOnClickListener(v -> {
@@ -191,12 +189,6 @@ public class SmallView extends ViewOutlineProvider {
       clientController.handleAction(light ? "buttonLight" : "buttonLightOff", null, 0);
       changeBarView();
     });
-  }
-
-  // 导航栏隐藏
-  private void setNavBarHide(boolean isShow) {
-    smallView.navBar.setVisibility(isShow ? View.VISIBLE : View.GONE);
-    smallView.buttonNavBar.setImageResource(isShow ? R.drawable.not_equal : R.drawable.equals);
   }
 
   private void changeBarView() {
@@ -271,7 +263,6 @@ public class SmallView extends ViewOutlineProvider {
     int height = textureViewLayoutParams.height;
     int startX = smallViewParams.x;
     int startY = smallViewParams.y;
-    // 检测到大小超出
     if (width > screenMaxWidth + 200 || height > screenMaxHeight + 200) {
       int maxLength = Math.min(screenMaxWidth, screenMaxHeight);
       if (width < height) device.smallLength = maxLength;
@@ -280,7 +271,6 @@ public class SmallView extends ViewOutlineProvider {
       updateSite(0, statusBarHeight);
       return;
     }
-    // 检测到位置超出过多
     int halfWidth = (int) (width * 0.5);
     if (startX < -1 * halfWidth) updateSite(-1 * halfWidth + 50, startY);
     if (startX > screenSize.widthPixels - halfWidth) updateSite(screenSize.widthPixels - halfWidth - 50, startY);
