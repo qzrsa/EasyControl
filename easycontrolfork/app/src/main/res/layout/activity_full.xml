@@ -45,7 +45,7 @@
         android:focusable="false"
         android:padding="8dp"
         android:src="@drawable/caret_left"
-        android:tint="@color/onBackground" />
+        android:tint="#FFFFFF" />
 
       <ImageView
         android:id="@+id/button_home"
@@ -55,7 +55,7 @@
         android:focusable="false"
         android:padding="8dp"
         android:src="@drawable/o"
-        android:tint="@color/onBackground" />
+        android:tint="#FFFFFF" />
 
       <ImageView
         android:id="@+id/button_switch"
@@ -65,7 +65,7 @@
         android:focusable="false"
         android:padding="8dp"
         android:src="@drawable/square"
-        android:tint="@color/onBackground" />
+        android:tint="#FFFFFF" />
 
       <ImageView
         android:id="@+id/button_auto_rotate"
@@ -75,7 +75,7 @@
         android:focusable="false"
         android:padding="8dp"
         android:src="@drawable/un_auto"
-        android:tint="@color/onCardBackground" />
+        android:tint="#FFFFFF" />
 
     </LinearLayout>
   </LinearLayout>
