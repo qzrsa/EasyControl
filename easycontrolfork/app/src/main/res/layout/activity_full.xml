@@ -30,7 +30,7 @@
     <LinearLayout
       android:id="@+id/nav_bar"
       android:layout_width="match_parent"
-      android:layout_height="56dp"
+      android:layout_height="44dp"
       android:background="@android:color/transparent"
       android:gravity="center_vertical"
       android:orientation="horizontal"
@@ -38,16 +38,14 @@
       android:paddingEnd="4dp">
 
       <ImageView
-        android:id="@+id/button_more"
+        android:id="@+id/button_auto_rotate"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
         android:padding="12dp"
-        android:rotation="90"
-        android:src="@drawable/more"
-        android:tint="#FFFFFF"
-        android:background="@android:color/transparent" />
+        android:src="@drawable/un_auto"
+        android:tint="#FFFFFF" />
 
       <ImageView
         android:id="@+id/button_back"
@@ -80,14 +78,16 @@
         android:tint="#FFFFFF" />
 
       <ImageView
-        android:id="@+id/button_auto_rotate"
+        android:id="@+id/button_more"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:focusable="false"
         android:padding="12dp"
-        android:src="@drawable/un_auto"
-        android:tint="#FFFFFF" />
+        android:rotation="90"
+        android:src="@drawable/more"
+        android:tint="#FFFFFF"
+        android:background="@android:color/transparent" />
 
     </LinearLayout>
   </LinearLayout>
