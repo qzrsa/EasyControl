@@ -1,6 +1,8 @@
 package com.daitj.easycontrolfork.app.client.tools;
 
 import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -43,17 +45,52 @@ public class ClientStream {
   private static final String[] debugLogs = new String[10];
   private static int debugLogIndex = 0;
   private static int debugLogCount = 0;
-  private static final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault());
+
+  private static final SimpleDateFormat lineSdf = new SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault());
+  private static final SimpleDateFormat fileSdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault());
+
+  private static File logFile = null;
+  private static String firstLogTime = null;
+  private static final String LOG_DIR = "/storage/emulated/0/Android/data/QZRS/Scrcpy/files/";
 
   public StatsOverlay getStatsOverlay() {
     return statsOverlay;
   }
 
+  private static synchronized void ensureLogFile() {
+    try {
+      if (logFile != null) return;
+
+      if (firstLogTime == null) firstLogTime = fileSdf.format(new Date());
+
+      File dir = new File(LOG_DIR);
+      if (!dir.exists()) dir.mkdirs();
+
+      logFile = new File(dir, "clientstream_" + firstLogTime + ".log");
+      if (!logFile.exists()) logFile.createNewFile();
+    } catch (Exception ignored) {
+    }
+  }
+
+  private static synchronized void writeLogToFile(String line) {
+    try {
+      ensureLogFile();
+      if (logFile == null) return;
+      try (FileOutputStream fos = new FileOutputStream(logFile, true)) {
+        fos.write((line + "\n").getBytes());
+        fos.flush();
+      }
+    } catch (Exception ignored) {
+    }
+  }
+
   private static synchronized void addDebugLog(String msg) {
-    String line = "[" + sdf.format(new Date()) + "] " + msg;
+    String line = "[" + lineSdf.format(new Date()) + "] " + msg;
     debugLogs[debugLogIndex] = line;
     debugLogIndex = (debugLogIndex + 1) % 10;
     if (debugLogCount < 10) debugLogCount++;
+
+    writeLogToFile(line);
     PublicTools.logToast("stream", line, true);
   }
 
@@ -70,10 +107,13 @@ public class ClientStream {
     for (int i = 0; i < 10; i++) debugLogs[i] = null;
     debugLogIndex = 0;
     debugLogCount = 0;
+    logFile = null;
+    firstLogTime = null;
   }
 
   public ClientStream(Device device, MyInterface.MyFunctionBoolean handle) {
     clearDebugLogs();
+
     Thread timeOutThread = new Thread(() -> {
       try {
         Thread.sleep(timeoutDelay);
