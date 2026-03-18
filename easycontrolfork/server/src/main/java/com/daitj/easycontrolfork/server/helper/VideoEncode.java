@@ -1,8 +1,4 @@
-/*
- * 本项目大量借鉴学习了开源投屏软件：Scrcpy，在此对该项目表示感谢
- * 
- * 视频编码优化版本 - 支持动态码率、自适应分辨率、关键帧优化
- */
+
 package com.daitj.easycontrolfork.server.helper;
 
 import android.graphics.Rect;
@@ -31,14 +27,14 @@ public final class VideoEncode {
   private static boolean useH265;
   
   // 编码器配置选项
-  private static boolean useDynamicBitrate = true;
-  private static boolean useLowLatencyMode = true;
-  private static int bitrateMode = BITRATE_MODE_VBR; // VBR 或 CBR
+  private static final int BITRATE_MODE_VBR = 0;
+  private static final int BITRATE_MODE_CBR = 1;
+  private static final int BITRATE_MODE_CQ = 2;
   
   // 码率模式常量
-  private static final int BITRATE_MODE_VBR = 0; // 可变码率
-  private static final int BITRATE_MODE_CBR = 1; // 恒定码率
-  private static final int BITRATE_MODE_CQ = 2;  // 恒定质量
+  private static boolean useDynamicBitrate = true;
+  private static boolean useLowLatencyMode = true;
+  private static int bitrateMode = BITRATE_MODE_VBR;
 
   private static IBinder display;
   
