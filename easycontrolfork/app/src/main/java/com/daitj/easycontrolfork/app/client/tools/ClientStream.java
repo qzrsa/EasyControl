@@ -140,48 +140,43 @@ public class ClientStream {
     int reTryTime = timeoutDelay / reTry;
 
     int mode = getEffectiveConnMode(device);
+    PublicTools.logToast("stream", "连接模式: " + mode + " relayHost: " + getEffectiveRelayHost(device) + ":" + getEffectiveRelayPort(device), false);
 
-    // 模式 1：直接连接（完全保持原有逻辑）
     if (mode == Device.CONN_DIRECT) {
+      PublicTools.logToast("stream", "走直连模式", false);
       connectDirectOrAdb(device, reTry, reTryTime);
       return;
     }
 
-    // 模式 2：先直连，失败后走服务器
     if (mode == Device.CONN_AUTO) {
+      PublicTools.logToast("stream", "走自动模式，先尝试直连", false);
       if (!device.isLinkDevice()) {
         try {
           connectDirectOnly(device);
+          PublicTools.logToast("stream", "自动模式直连成功", false);
           return;
-        } catch (Exception ignored) {
-          // 直连失败，自动切换服务器
+        } catch (Exception e) {
+          PublicTools.logToast("stream", "直连失败，切换服务器: " + e.getMessage(), false);
         }
       }
-      connectRelay(
-        getEffectiveRelayHost(device),
-        getEffectiveRelayPort(device),
-        device.uuid, reTry, reTryTime
-      );
+      connectRelay(getEffectiveRelayHost(device), getEffectiveRelayPort(device), device.uuid, reTry, reTryTime);
       return;
     }
 
-    // 模式 3：强制服务器中转
     if (mode == Device.CONN_RELAY) {
-      connectRelay(
-        getEffectiveRelayHost(device),
-        getEffectiveRelayPort(device),
-        device.uuid, reTry, reTryTime
-      );
+      PublicTools.logToast("stream", "走强制中转模式", false);
+      connectRelay(getEffectiveRelayHost(device), getEffectiveRelayPort(device), device.uuid, reTry, reTryTime);
       return;
     }
 
-    // 兜底：走原有直连逻辑
+    PublicTools.logToast("stream", "兜底走直连", false);
     connectDirectOrAdb(device, reTry, reTryTime);
   }
 
   // 原有直连 + ADB tcpForward 逻辑（模式 1 / 兜底使用）
   private void connectDirectOrAdb(Device device, int reTry, int reTryTime) throws Exception {
     if (!device.isLinkDevice()) {
+      PublicTools.logToast("stream", "尝试直连 " + device.address + ":" + device.serverPort, false);
       long startTime = System.currentTimeMillis();
       boolean mainConn = false;
       InetSocketAddress inetSocketAddress = new InetSocketAddress(PublicTools.getIp(device.address), device.serverPort);
@@ -191,6 +186,7 @@ public class ClientStream {
             mainSocket = new Socket();
             mainSocket.connect(inetSocketAddress, timeoutDelay / 2);
             mainConn = true;
+            PublicTools.logToast("stream", "直连 mainSocket 成功", false);
           }
           videoSocket = new Socket();
           videoSocket.connect(inetSocketAddress, timeoutDelay / 2);
@@ -198,8 +194,10 @@ public class ClientStream {
           mainDataInputStream = new DataInputStream(mainSocket.getInputStream());
           videoDataInputStream = new DataInputStream(videoSocket.getInputStream());
           connectDirect = true;
+          PublicTools.logToast("stream", "直连完成", false);
           return;
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+          PublicTools.logToast("stream", "直连第" + (i + 1) + "次失败: " + e.getMessage(), false);
           if (mainSocket != null) mainSocket.close();
           if (videoSocket != null) videoSocket.close();
           if (System.currentTimeMillis() - startTime >= timeoutDelay / 2 - 1000) i = reTry;
@@ -207,12 +205,15 @@ public class ClientStream {
         }
       }
     }
+    PublicTools.logToast("stream", "直连全部失败，尝试 ADB tcpForward", false);
     for (int i = 0; i < reTry; i++) {
       try {
         if (mainBufferStream == null) mainBufferStream = adb.tcpForward(device.serverPort);
         if (videoBufferStream == null) videoBufferStream = adb.tcpForward(device.serverPort);
+        PublicTools.logToast("stream", "ADB tcpForward 成功", false);
         return;
-      } catch (Exception ignored) {
+      } catch (Exception e) {
+        PublicTools.logToast("stream", "ADB tcpForward 第" + (i + 1) + "次失败: " + e.getMessage(), false);
         Thread.sleep(reTryTime);
       }
     }
@@ -237,20 +238,26 @@ public class ClientStream {
     if (relayHost == null || relayHost.isEmpty()) {
       throw new Exception("服务器地址未配置，请在设置中填写服务器地址");
     }
+    PublicTools.logToast("stream", "开始连接中转服务器 " + relayHost + ":" + relayPort, false);
     for (int i = 0; i < reTry; i++) {
       try {
+        PublicTools.logToast("stream", "中转连接尝试第" + (i + 1) + "次", false);
         mainSocket = new Socket();
         mainSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
+        PublicTools.logToast("stream", "mainSocket 连接成功", false);
 
         videoSocket = new Socket();
         videoSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
+        PublicTools.logToast("stream", "videoSocket 连接成功", false);
 
         mainOutputStream = mainSocket.getOutputStream();
         mainDataInputStream = new DataInputStream(mainSocket.getInputStream());
         videoDataInputStream = new DataInputStream(videoSocket.getInputStream());
         connectDirect = true;
+        PublicTools.logToast("stream", "中转连接完成", false);
         return;
-      } catch (Exception ignored) {
+      } catch (Exception e) {
+        PublicTools.logToast("stream", "中转连接第" + (i + 1) + "次失败: " + e.getMessage(), false);
         if (mainSocket != null) mainSocket.close();
         if (videoSocket != null) videoSocket.close();
         Thread.sleep(reTryTime);
