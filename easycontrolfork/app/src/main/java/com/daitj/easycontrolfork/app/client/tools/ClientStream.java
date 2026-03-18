@@ -87,26 +87,52 @@ public class ClientStream {
       + " startApp=" + device.startApp + " \n").getBytes()));
   }
 
-  // 解析当前设备最终生效的连接配置
+  // ===== 安全的配置解析（带空指针保护，兜底直连）=====
+
   private int getEffectiveConnMode(Device device) {
-    if (device.useGlobalRelay) return AppData.setting.getDefaultConnMode();
+    if (device.useGlobalRelay && AppData.setting != null) {
+      try {
+        return AppData.setting.getDefaultConnMode();
+      } catch (Exception ignored) {
+      }
+    }
     return device.connMode;
   }
 
   private String getEffectiveRelayHost(Device device) {
-    if (device.useGlobalRelay) return AppData.setting.getDefaultRelayHost();
-    return device.relayHost;
+    if (device.useGlobalRelay && AppData.setting != null) {
+      try {
+        String host = AppData.setting.getDefaultRelayHost();
+        if (host != null && !host.isEmpty()) return host;
+      } catch (Exception ignored) {
+      }
+    }
+    return device.relayHost != null ? device.relayHost : "";
   }
 
   private int getEffectiveRelayPort(Device device) {
-    if (device.useGlobalRelay) return AppData.setting.getDefaultRelayPort();
-    return device.relayPort;
+    if (device.useGlobalRelay && AppData.setting != null) {
+      try {
+        int port = AppData.setting.getDefaultRelayPort();
+        if (port > 0) return port;
+      } catch (Exception ignored) {
+      }
+    }
+    return device.relayPort > 0 ? device.relayPort : 25167;
   }
 
   private String getEffectiveRelayKey(Device device) {
-    if (device.useGlobalRelay) return AppData.setting.getDefaultRelayKey();
-    return device.relayKey;
+    if (device.useGlobalRelay && AppData.setting != null) {
+      try {
+        String key = AppData.setting.getDefaultRelayKey();
+        if (key != null) return key;
+      } catch (Exception ignored) {
+      }
+    }
+    return device.relayKey != null ? device.relayKey : "";
   }
+
+  // ===== 连接主逻辑 =====
 
   private void connectServer(Device device) throws Exception {
     Thread.sleep(50);
@@ -114,11 +140,8 @@ public class ClientStream {
     int reTryTime = timeoutDelay / reTry;
 
     int mode = getEffectiveConnMode(device);
-    String relayHost = getEffectiveRelayHost(device);
-    int relayPort = getEffectiveRelayPort(device);
-    String relayKey = getEffectiveRelayKey(device);
 
-    // 模式 1：直接连接（保持原有逻辑不变）
+    // 模式 1：直接连接（完全保持原有逻辑）
     if (mode == Device.CONN_DIRECT) {
       connectDirectOrAdb(device, reTry, reTryTime);
       return;
@@ -129,26 +152,36 @@ public class ClientStream {
       if (!device.isLinkDevice()) {
         try {
           connectDirectOnly(device);
-          return; // 直连成功
+          return;
         } catch (Exception ignored) {
-          // 直连失败，自动切换到服务器中转
+          // 直连失败，自动切换服务器
         }
       }
-      connectRelay(relayHost, relayPort, relayKey, device.uuid, reTry, reTryTime);
+      connectRelay(
+        getEffectiveRelayHost(device),
+        getEffectiveRelayPort(device),
+        getEffectiveRelayKey(device),
+        device.uuid, reTry, reTryTime
+      );
       return;
     }
 
     // 模式 3：强制服务器中转
     if (mode == Device.CONN_RELAY) {
-      connectRelay(relayHost, relayPort, relayKey, device.uuid, reTry, reTryTime);
+      connectRelay(
+        getEffectiveRelayHost(device),
+        getEffectiveRelayPort(device),
+        getEffectiveRelayKey(device),
+        device.uuid, reTry, reTryTime
+      );
       return;
     }
 
-    // 兜底：走原有逻辑
+    // 兜底：任何情况下都走原有直连逻辑，不影响老用户
     connectDirectOrAdb(device, reTry, reTryTime);
   }
 
-  // 原有直连 + ADB tcpForward 逻辑（模式 1 使用）
+  // 原有直连 + ADB tcpForward 逻辑（模式 1 / 兜底 使用）
   private void connectDirectOrAdb(Device device, int reTry, int reTryTime) throws Exception {
     if (!device.isLinkDevice()) {
       long startTime = System.currentTimeMillis();
@@ -188,13 +221,11 @@ public class ClientStream {
     throw new Exception(AppData.applicationContext.getString(R.string.toast_connect_server));
   }
 
-  // 仅直连，不走 ADB tcpForward（模式 2 的直连阶段使用）
+  // 仅直连，不走 ADB tcpForward（模式 2 直连阶段使用）
   private void connectDirectOnly(Device device) throws Exception {
     InetSocketAddress inetSocketAddress = new InetSocketAddress(PublicTools.getIp(device.address), device.serverPort);
-    boolean mainConn = false;
     mainSocket = new Socket();
     mainSocket.connect(inetSocketAddress, 5000);
-    mainConn = true;
     videoSocket = new Socket();
     videoSocket.connect(inetSocketAddress, 5000);
     mainOutputStream = mainSocket.getOutputStream();
@@ -212,7 +243,6 @@ public class ClientStream {
       try {
         mainSocket = new Socket();
         mainSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
-        // 握手：发送身份信息（角色:uuid:通道:密钥）
         String mainHandshake = "client:" + uuid + ":main:" + relayKey + "\n";
         mainSocket.getOutputStream().write(mainHandshake.getBytes());
 
