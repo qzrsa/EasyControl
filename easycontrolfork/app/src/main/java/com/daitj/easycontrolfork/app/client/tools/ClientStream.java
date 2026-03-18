@@ -51,10 +51,18 @@ public class ClientStream {
 
   private static File logFile = null;
   private static String firstLogTime = null;
-  private static final String LOG_DIR = "/storage/emulated/0/Android/data/QZRS/Scrcpy/files/";
 
   public StatsOverlay getStatsOverlay() {
     return statsOverlay;
+  }
+
+  private static String getLogDir() {
+    try {
+      File dir = AppData.applicationContext.getExternalFilesDir(null);
+      if (dir != null) return dir.getAbsolutePath() + "/";
+    } catch (Exception ignored) {
+    }
+    return "/storage/emulated/0/Download/";
   }
 
   private static synchronized void ensureLogFile() {
@@ -63,7 +71,7 @@ public class ClientStream {
 
       if (firstLogTime == null) firstLogTime = fileSdf.format(new Date());
 
-      File dir = new File(LOG_DIR);
+      File dir = new File(getLogDir());
       if (!dir.exists()) dir.mkdirs();
 
       logFile = new File(dir, "clientstream_" + firstLogTime + ".log");
