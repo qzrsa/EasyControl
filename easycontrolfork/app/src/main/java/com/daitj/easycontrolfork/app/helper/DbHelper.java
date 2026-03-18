@@ -14,7 +14,7 @@ import com.daitj.easycontrolfork.app.entity.Device;
 public class DbHelper extends SQLiteOpenHelper {
 
   private static final String dataBaseName = "app.db";
-  private static final int version = 23;
+  private static final int version = 24; // 版本号+1
   private final String tableName = "DevicesDb";
 
   public DbHelper(Context context) {
@@ -60,28 +60,28 @@ public class DbHelper extends SQLiteOpenHelper {
     stringBuilder.append("smallXLan integer,");
     stringBuilder.append("smallYLan integer,");
     stringBuilder.append("smallLengthLan integer,");
-    stringBuilder.append("miniY integer);");
+    stringBuilder.append("miniY integer,");
+    // 新增字段
+    stringBuilder.append("connMode integer,");
+    stringBuilder.append("useGlobalRelay integer,");
+    stringBuilder.append("relayHost text,");
+    stringBuilder.append("relayPort integer,");
+    stringBuilder.append("relayKey text);");
     db.execSQL(stringBuilder.toString());
   }
 
   @SuppressLint("Range")
   @Override
   public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-    if (oldVersion < version) {
-      // 获取旧数据
+    if (oldVersion < newVersion) {
       ArrayList<Device> devices = getAll(db);
-      // 修改表名
       db.execSQL("alter table " + tableName + " rename to tempTable");
-      // 新建新表
       onCreate(db);
-      // 将数据搬移至新表
       for (Device device : devices) db.insert(tableName, null, getValues(device));
-      // 删除旧表
       db.execSQL("drop table tempTable");
     }
   }
 
-  // 读取数据库设备列表
   @SuppressLint("Range")
   public ArrayList<Device> getAll() {
     return getAll(getReadableDatabase());
@@ -95,7 +95,6 @@ public class DbHelper extends SQLiteOpenHelper {
     return devices;
   }
 
-  // 查找
   @SuppressLint("Range")
   public Device getByUUID(String uuid) {
     Device device = null;
@@ -105,17 +104,14 @@ public class DbHelper extends SQLiteOpenHelper {
     return device;
   }
 
-  // 更新
   public void insert(Device device) {
     getWritableDatabase().insert(tableName, null, getValues(device));
   }
 
-  // 更新
   public void update(Device device) {
     getWritableDatabase().update(tableName, getValues(device), "uuid=?", new String[]{device.uuid});
   }
 
-  // 删除
   public void delete(Device device) {
     getWritableDatabase().delete(tableName, "uuid=?", new String[]{device.uuid});
   }
@@ -158,6 +154,12 @@ public class DbHelper extends SQLiteOpenHelper {
     values.put("smallYLan", device.smallYLan);
     values.put("smallLengthLan", device.smallLengthLan);
     values.put("miniY", device.miniY);
+    // 新增字段
+    values.put("connMode", device.connMode);
+    values.put("useGlobalRelay", device.useGlobalRelay ? 1 : 0);
+    values.put("relayHost", device.relayHost);
+    values.put("relayPort", device.relayPort);
+    values.put("relayKey", device.relayKey);
     return values;
   }
 
@@ -166,142 +168,46 @@ public class DbHelper extends SQLiteOpenHelper {
     Device device = new Device(cursor.getString(cursor.getColumnIndex("uuid")), cursor.getInt(cursor.getColumnIndex("type")));
     for (int i = 0; i < cursor.getColumnCount(); i++) {
       switch (cursor.getColumnName(i)) {
-        case "name": {
-          device.name = cursor.getString(i);
-          break;
-        }
-        case "address": {
-          device.address = cursor.getString(i);
-          break;
-        }
-        case "startApp": {
-          device.startApp = cursor.getString(i);
-          break;
-        }
-        case "adbPort": {
-          device.adbPort = cursor.getInt(i);
-          break;
-        }
-        case "serverPort": {
-          device.serverPort = cursor.getInt(i);
-          break;
-        }
-        case "listenClip": {
-          device.listenClip = cursor.getInt(i) == 1;
-          break;
-        }
-        case "isAudio": {
-          device.isAudio = cursor.getInt(i) == 1;
-          break;
-        }
-        case "maxSize": {
-          device.maxSize = cursor.getInt(i);
-          break;
-        }
-        case "maxFps": {
-          device.maxFps = cursor.getInt(i);
-          break;
-        }
-        case "maxVideoBit": {
-          device.maxVideoBit = cursor.getInt(i);
-          break;
-        }
-        case "useH265": {
-          device.useH265 = cursor.getInt(i) == 1;
-          break;
-        }
-        case "connectOnStart": {
-          device.connectOnStart = cursor.getInt(i) == 1;
-          break;
-        }
-        case "customResolutionOnConnect": {
-          device.customResolutionOnConnect = cursor.getInt(i) == 1;
-          break;
-        }
-        case "wakeOnConnect": {
-          device.wakeOnConnect = cursor.getInt(i) == 1;
-          break;
-        }
-        case "lightOffOnConnect": {
-          device.lightOffOnConnect = cursor.getInt(i) == 1;
-          break;
-        }
-        case "showNavBarOnConnect": {
-          device.showNavBarOnConnect = cursor.getInt(i) == 1;
-          break;
-        }
-        case "changeToFullOnConnect": {
-          device.changeToFullOnConnect = cursor.getInt(i) == 1;
-          break;
-        }
-        case "keepWakeOnRunning": {
-          device.keepWakeOnRunning = cursor.getInt(i) == 1;
-          break;
-        }
-        case "changeResolutionOnRunning": {
-          device.changeResolutionOnRunning = cursor.getInt(i) == 1;
-          break;
-        }
-        case "smallToMiniOnRunning": {
-          device.smallToMiniOnRunning = cursor.getInt(i) == 1;
-          break;
-        }
-        case "fullToMiniOnRunning": {
-          device.fullToMiniOnRunning = cursor.getInt(i) == 1;
-          break;
-        }
-        case "miniTimeoutOnRunning": {
-          device.miniTimeoutOnRunning = cursor.getInt(i) == 1;
-          break;
-        }
-        case "lockOnClose": {
-          device.lockOnClose = cursor.getInt(i) == 1;
-          break;
-        }
-        case "lightOnClose": {
-          device.lightOnClose = cursor.getInt(i) == 1;
-          break;
-        }
-        case "reconnectOnClose": {
-          device.reconnectOnClose = cursor.getInt(i) == 1;
-          break;
-        }
-        case "customResolutionWidth": {
-          device.customResolutionWidth = cursor.getInt(i);
-          break;
-        }
-        case "customResolutionHeight": {
-          device.customResolutionHeight = cursor.getInt(i);
-          break;
-        }
-        case "smallX": {
-          device.smallX = cursor.getInt(i);
-          break;
-        }
-        case "smallY": {
-          device.smallY = cursor.getInt(i);
-          break;
-        }
-        case "smallLength": {
-          device.smallLength = cursor.getInt(i);
-          break;
-        }
-        case "smallXLan": {
-          device.smallXLan = cursor.getInt(i);
-          break;
-        }
-        case "smallYLan": {
-          device.smallYLan = cursor.getInt(i);
-          break;
-        }
-        case "smallLengthLan": {
-          device.smallLengthLan = cursor.getInt(i);
-          break;
-        }
-        case "miniY": {
-          device.miniY = cursor.getInt(i);
-          break;
-        }
+        case "name": device.name = cursor.getString(i); break;
+        case "address": device.address = cursor.getString(i); break;
+        case "startApp": device.startApp = cursor.getString(i); break;
+        case "adbPort": device.adbPort = cursor.getInt(i); break;
+        case "serverPort": device.serverPort = cursor.getInt(i); break;
+        case "listenClip": device.listenClip = cursor.getInt(i) == 1; break;
+        case "isAudio": device.isAudio = cursor.getInt(i) == 1; break;
+        case "maxSize": device.maxSize = cursor.getInt(i); break;
+        case "maxFps": device.maxFps = cursor.getInt(i); break;
+        case "maxVideoBit": device.maxVideoBit = cursor.getInt(i); break;
+        case "useH265": device.useH265 = cursor.getInt(i) == 1; break;
+        case "connectOnStart": device.connectOnStart = cursor.getInt(i) == 1; break;
+        case "customResolutionOnConnect": device.customResolutionOnConnect = cursor.getInt(i) == 1; break;
+        case "wakeOnConnect": device.wakeOnConnect = cursor.getInt(i) == 1; break;
+        case "lightOffOnConnect": device.lightOffOnConnect = cursor.getInt(i) == 1; break;
+        case "showNavBarOnConnect": device.showNavBarOnConnect = cursor.getInt(i) == 1; break;
+        case "changeToFullOnConnect": device.changeToFullOnConnect = cursor.getInt(i) == 1; break;
+        case "keepWakeOnRunning": device.keepWakeOnRunning = cursor.getInt(i) == 1; break;
+        case "changeResolutionOnRunning": device.changeResolutionOnRunning = cursor.getInt(i) == 1; break;
+        case "smallToMiniOnRunning": device.smallToMiniOnRunning = cursor.getInt(i) == 1; break;
+        case "fullToMiniOnRunning": device.fullToMiniOnRunning = cursor.getInt(i) == 1; break;
+        case "miniTimeoutOnRunning": device.miniTimeoutOnRunning = cursor.getInt(i) == 1; break;
+        case "lockOnClose": device.lockOnClose = cursor.getInt(i) == 1; break;
+        case "lightOnClose": device.lightOnClose = cursor.getInt(i) == 1; break;
+        case "reconnectOnClose": device.reconnectOnClose = cursor.getInt(i) == 1; break;
+        case "customResolutionWidth": device.customResolutionWidth = cursor.getInt(i); break;
+        case "customResolutionHeight": device.customResolutionHeight = cursor.getInt(i); break;
+        case "smallX": device.smallX = cursor.getInt(i); break;
+        case "smallY": device.smallY = cursor.getInt(i); break;
+        case "smallLength": device.smallLength = cursor.getInt(i); break;
+        case "smallXLan": device.smallXLan = cursor.getInt(i); break;
+        case "smallYLan": device.smallYLan = cursor.getInt(i); break;
+        case "smallLengthLan": device.smallLengthLan = cursor.getInt(i); break;
+        case "miniY": device.miniY = cursor.getInt(i); break;
+        // 新增字段
+        case "connMode": device.connMode = cursor.getInt(i); break;
+        case "useGlobalRelay": device.useGlobalRelay = cursor.getInt(i) == 1; break;
+        case "relayHost": device.relayHost = cursor.getString(i); break;
+        case "relayPort": device.relayPort = cursor.getInt(i); break;
+        case "relayKey": device.relayKey = cursor.getString(i); break;
       }
     }
     return device;
