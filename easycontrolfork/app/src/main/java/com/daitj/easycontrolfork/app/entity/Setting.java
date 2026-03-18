@@ -6,8 +6,12 @@ import java.util.UUID;
 
 public final class Setting {
   private final SharedPreferences sharedPreferences;
-
   private final SharedPreferences.Editor editor;
+
+  public Setting(SharedPreferences sharedPreferences) {
+    this.sharedPreferences = sharedPreferences;
+    this.editor = sharedPreferences.edit();
+  }
 
   public String getLocale() {
     return sharedPreferences.getString("locale", "");
@@ -35,8 +39,43 @@ public final class Setting {
     return sharedPreferences.getString("UUID", "");
   }
 
-  public Setting(SharedPreferences sharedPreferences) {
-    this.sharedPreferences = sharedPreferences;
-    this.editor = sharedPreferences.edit();
+  // 全局默认连接模式
+  public int getDefaultConnMode() {
+    return sharedPreferences.getInt("defaultConnMode", Device.CONN_DIRECT);
+  }
+
+  public void setDefaultConnMode(int value) {
+    editor.putInt("defaultConnMode", value);
+    editor.apply();
+  }
+
+  // 全局默认服务器地址
+  public String getDefaultRelayHost() {
+    return sharedPreferences.getString("defaultRelayHost", "");
+  }
+
+  public void setDefaultRelayHost(String value) {
+    editor.putString("defaultRelayHost", value);
+    editor.apply();
+  }
+
+  // 全局默认服务器端口
+  public int getDefaultRelayPort() {
+    return sharedPreferences.getInt("defaultRelayPort", 25167);
+  }
+
+  public void setDefaultRelayPort(int value) {
+    editor.putInt("defaultRelayPort", value);
+    editor.apply();
+  }
+
+  // 全局默认服务器密钥
+  public String getDefaultRelayKey() {
+    return sharedPreferences.getString("defaultRelayKey", "");
+  }
+
+  public void setDefaultRelayKey(String value) {
+    editor.putString("defaultRelayKey", value);
+    editor.apply();
   }
 }
