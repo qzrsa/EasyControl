@@ -14,6 +14,13 @@ public final class Options {
   public static boolean supportH265 = true;
   public static boolean supportOpus = true;
   public static String startApp = "";
+  
+  // === 视频编码优化参数 ===
+  public static int minVideoBit = 500000;        // 最低码率 500kbps
+  public static int iFrameInterval = 10;          // I帧间隔（秒）
+  public static boolean enableDynamicBitrate = true;  // 启用动态码率
+  public static boolean enableLowLatencyMode = true;  // 启用低延迟模式
+  public static int videoProfile = 0;             // 0=自动, 1=baseline, 2=main, 3=high
 
   public static void parse(String... args) {
     for (String arg : args) {
@@ -52,8 +59,23 @@ public final class Options {
         case "startApp":
           startApp = value;
           break;
+        // === 新增参数 ===
+        case "minVideoBit":
+          minVideoBit = Integer.parseInt(value) * 1000; // 参数单位 kbps
+          break;
+        case "iFrameInterval":
+          iFrameInterval = Integer.parseInt(value);
+          break;
+        case "dynamicBitrate":
+          enableDynamicBitrate = Integer.parseInt(value) == 1;
+          break;
+        case "lowLatencyMode":
+          enableLowLatencyMode = Integer.parseInt(value) == 1;
+          break;
+        case "videoProfile":
+          videoProfile = Integer.parseInt(value);
+          break;
       }
     }
   }
 }
-
