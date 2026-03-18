@@ -160,7 +160,6 @@ public class ClientStream {
       connectRelay(
         getEffectiveRelayHost(device),
         getEffectiveRelayPort(device),
-        getEffectiveRelayKey(device),
         device.uuid, reTry, reTryTime
       );
       return;
@@ -171,17 +170,16 @@ public class ClientStream {
       connectRelay(
         getEffectiveRelayHost(device),
         getEffectiveRelayPort(device),
-        getEffectiveRelayKey(device),
         device.uuid, reTry, reTryTime
       );
       return;
     }
 
-    // 兜底：任何情况下都走原有直连逻辑，不影响老用户
+    // 兜底：走原有直连逻辑
     connectDirectOrAdb(device, reTry, reTryTime);
   }
 
-  // 原有直连 + ADB tcpForward 逻辑（模式 1 / 兜底 使用）
+  // 原有直连 + ADB tcpForward 逻辑（模式 1 / 兜底使用）
   private void connectDirectOrAdb(Device device, int reTry, int reTryTime) throws Exception {
     if (!device.isLinkDevice()) {
       long startTime = System.currentTimeMillis();
@@ -234,8 +232,8 @@ public class ClientStream {
     connectDirect = true;
   }
 
-  // 服务器中转连接（模式 2 fallback + 模式 3 使用）
-  private void connectRelay(String relayHost, int relayPort, String relayKey, String uuid, int reTry, int reTryTime) throws Exception {
+  // 纯 TCP 转发模式（配合 frp 等透明代理使用，不发握手包）
+  private void connectRelay(String relayHost, int relayPort, String uuid, int reTry, int reTryTime) throws Exception {
     if (relayHost == null || relayHost.isEmpty()) {
       throw new Exception("服务器地址未配置，请在设置中填写服务器地址");
     }
@@ -243,13 +241,9 @@ public class ClientStream {
       try {
         mainSocket = new Socket();
         mainSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
-        String mainHandshake = "client:" + uuid + ":main:" + relayKey + "\n";
-        mainSocket.getOutputStream().write(mainHandshake.getBytes());
 
         videoSocket = new Socket();
         videoSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
-        String videoHandshake = "client:" + uuid + ":video:" + relayKey + "\n";
-        videoSocket.getOutputStream().write(videoHandshake.getBytes());
 
         mainOutputStream = mainSocket.getOutputStream();
         mainDataInputStream = new DataInputStream(mainSocket.getInputStream());
