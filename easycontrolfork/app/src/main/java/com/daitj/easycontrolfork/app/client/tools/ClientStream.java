@@ -33,10 +33,8 @@ public class ClientStream {
   private static final String serverName = "/data/local/tmp/easycontrolfork_server_" + BuildConfig.VERSION_CODE + ".jar";
   private static final boolean supportH265 = DecodecTools.isSupportH265();
   private static final boolean supportOpus = DecodecTools.isSupportOpus();
-
   private static final int timeoutDelay = 1000 * 15;
 
-  // 统计信息覆盖层
   private final StatsOverlay statsOverlay = new StatsOverlay();
 
   public StatsOverlay getStatsOverlay() {
@@ -89,10 +87,69 @@ public class ClientStream {
       + " startApp=" + device.startApp + " \n").getBytes()));
   }
 
+  // 解析当前设备最终生效的连接配置
+  private int getEffectiveConnMode(Device device) {
+    if (device.useGlobalRelay) return AppData.setting.getDefaultConnMode();
+    return device.connMode;
+  }
+
+  private String getEffectiveRelayHost(Device device) {
+    if (device.useGlobalRelay) return AppData.setting.getDefaultRelayHost();
+    return device.relayHost;
+  }
+
+  private int getEffectiveRelayPort(Device device) {
+    if (device.useGlobalRelay) return AppData.setting.getDefaultRelayPort();
+    return device.relayPort;
+  }
+
+  private String getEffectiveRelayKey(Device device) {
+    if (device.useGlobalRelay) return AppData.setting.getDefaultRelayKey();
+    return device.relayKey;
+  }
+
   private void connectServer(Device device) throws Exception {
     Thread.sleep(50);
     int reTry = 40;
     int reTryTime = timeoutDelay / reTry;
+
+    int mode = getEffectiveConnMode(device);
+    String relayHost = getEffectiveRelayHost(device);
+    int relayPort = getEffectiveRelayPort(device);
+    String relayKey = getEffectiveRelayKey(device);
+
+    // 模式 1：直接连接（保持原有逻辑不变）
+    if (mode == Device.CONN_DIRECT) {
+      connectDirectOrAdb(device, reTry, reTryTime);
+      return;
+    }
+
+    // 模式 2：先直连，失败后走服务器
+    if (mode == Device.CONN_AUTO) {
+      if (!device.isLinkDevice()) {
+        try {
+          connectDirectOnly(device);
+          return; // 直连成功
+        } catch (Exception ignored) {
+          // 直连失败，自动切换到服务器中转
+        }
+      }
+      connectRelay(relayHost, relayPort, relayKey, device.uuid, reTry, reTryTime);
+      return;
+    }
+
+    // 模式 3：强制服务器中转
+    if (mode == Device.CONN_RELAY) {
+      connectRelay(relayHost, relayPort, relayKey, device.uuid, reTry, reTryTime);
+      return;
+    }
+
+    // 兜底：走原有逻辑
+    connectDirectOrAdb(device, reTry, reTryTime);
+  }
+
+  // 原有直连 + ADB tcpForward 逻辑（模式 1 使用）
+  private void connectDirectOrAdb(Device device, int reTry, int reTryTime) throws Exception {
     if (!device.isLinkDevice()) {
       long startTime = System.currentTimeMillis();
       boolean mainConn = false;
@@ -129,6 +186,53 @@ public class ClientStream {
       }
     }
     throw new Exception(AppData.applicationContext.getString(R.string.toast_connect_server));
+  }
+
+  // 仅直连，不走 ADB tcpForward（模式 2 的直连阶段使用）
+  private void connectDirectOnly(Device device) throws Exception {
+    InetSocketAddress inetSocketAddress = new InetSocketAddress(PublicTools.getIp(device.address), device.serverPort);
+    boolean mainConn = false;
+    mainSocket = new Socket();
+    mainSocket.connect(inetSocketAddress, 5000);
+    mainConn = true;
+    videoSocket = new Socket();
+    videoSocket.connect(inetSocketAddress, 5000);
+    mainOutputStream = mainSocket.getOutputStream();
+    mainDataInputStream = new DataInputStream(mainSocket.getInputStream());
+    videoDataInputStream = new DataInputStream(videoSocket.getInputStream());
+    connectDirect = true;
+  }
+
+  // 服务器中转连接（模式 2 fallback + 模式 3 使用）
+  private void connectRelay(String relayHost, int relayPort, String relayKey, String uuid, int reTry, int reTryTime) throws Exception {
+    if (relayHost == null || relayHost.isEmpty()) {
+      throw new Exception("服务器地址未配置，请在设置中填写服务器地址");
+    }
+    for (int i = 0; i < reTry; i++) {
+      try {
+        mainSocket = new Socket();
+        mainSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
+        // 握手：发送身份信息（角色:uuid:通道:密钥）
+        String mainHandshake = "client:" + uuid + ":main:" + relayKey + "\n";
+        mainSocket.getOutputStream().write(mainHandshake.getBytes());
+
+        videoSocket = new Socket();
+        videoSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
+        String videoHandshake = "client:" + uuid + ":video:" + relayKey + "\n";
+        videoSocket.getOutputStream().write(videoHandshake.getBytes());
+
+        mainOutputStream = mainSocket.getOutputStream();
+        mainDataInputStream = new DataInputStream(mainSocket.getInputStream());
+        videoDataInputStream = new DataInputStream(videoSocket.getInputStream());
+        connectDirect = true;
+        return;
+      } catch (Exception ignored) {
+        if (mainSocket != null) mainSocket.close();
+        if (videoSocket != null) videoSocket.close();
+        Thread.sleep(reTryTime);
+      }
+    }
+    throw new Exception("服务器中转连接失败，请检查服务器地址和端口");
   }
 
   public String runShell(String cmd) throws Exception {
@@ -188,10 +292,6 @@ public class ClientStream {
     else mainBufferStream.write(byteBuffer);
   }
 
-  /**
-   * 发送 keepAlive 并测量 RTT 延迟，结果上报给 StatsOverlay
-   * 注意：需要在发送 keepAlive 前后计时，此处仅记录发送时间戳供外部调用
-   */
   public void writeToMainWithLatency(ByteBuffer byteBuffer) throws Exception {
     long start = System.currentTimeMillis();
     writeToMain(byteBuffer);
