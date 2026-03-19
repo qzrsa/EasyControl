@@ -1,5 +1,8 @@
 package com.daitj.easycontrolfork.app.client.tools;
 
+import android.content.Intent;
+import android.net.VpnService;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -11,6 +14,8 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import com.daitj.easycontrolfork.app.BuildConfig;
 import com.daitj.easycontrolfork.app.R;
@@ -20,6 +25,7 @@ import com.daitj.easycontrolfork.app.client.decode.DecodecTools;
 import com.daitj.easycontrolfork.app.entity.AppData;
 import com.daitj.easycontrolfork.app.entity.Device;
 import com.daitj.easycontrolfork.app.entity.MyInterface;
+import com.daitj.easycontrolfork.app.helper.EasyTierManager;
 import com.daitj.easycontrolfork.app.helper.PublicTools;
 
 public class ClientStream {
@@ -60,24 +66,19 @@ public class ClientStream {
     try {
       File dir = AppData.applicationContext.getExternalFilesDir(null);
       if (dir != null) return dir.getAbsolutePath() + "/";
-    } catch (Exception ignored) {
-    }
+    } catch (Exception ignored) {}
     return "/storage/emulated/0/Download/";
   }
 
   private static synchronized void ensureLogFile() {
     try {
       if (logFile != null) return;
-
       if (firstLogTime == null) firstLogTime = fileSdf.format(new Date());
-
       File dir = new File(getLogDir());
       if (!dir.exists()) dir.mkdirs();
-
       logFile = new File(dir, "clientstream_" + firstLogTime + ".log");
       if (!logFile.exists()) logFile.createNewFile();
-    } catch (Exception ignored) {
-    }
+    } catch (Exception ignored) {}
   }
 
   private static synchronized void writeLogToFile(String line) {
@@ -88,8 +89,7 @@ public class ClientStream {
         fos.write((line + "\n").getBytes());
         fos.flush();
       }
-    } catch (Exception ignored) {
-    }
+    } catch (Exception ignored) {}
   }
 
   private static synchronized void addDebugLog(String msg) {
@@ -97,7 +97,6 @@ public class ClientStream {
     debugLogs[debugLogIndex] = line;
     debugLogIndex = (debugLogIndex + 1) % 10;
     if (debugLogCount < 10) debugLogCount++;
-
     writeLogToFile(line);
     PublicTools.logToast("stream", line, true);
   }
@@ -252,15 +251,15 @@ public class ClientStream {
       try {
         String key = AppData.setting.getDefaultRelayKey();
         if (key != null) {
-          addDebugLog("【配置】使用全局 EasyTier 网络密钥长度=" + key.length());
+          addDebugLog("【配置】使用全局 EasyTier 网络密鑐长度=" + key.length());
           return key;
         }
       } catch (Exception e) {
-        addDebugLog("【配置】读取全局 EasyTier 网络密钥失败=" + e);
+        addDebugLog("【配置】读取全局 EasyTier 网络密鑐失败=" + e);
       }
     }
     String key = device.relayKey != null ? device.relayKey : "";
-    addDebugLog("【配置】使用设备 EasyTier 网络密钥长度=" + key.length());
+    addDebugLog("【配置】使用设备 EasyTier 网络密鑐长度=" + key.length());
     return key;
   }
 
@@ -302,18 +301,111 @@ public class ClientStream {
         }
       }
       addDebugLog("【connectServer】自动模式切换到 EasyTier 虚拟组网");
-      connectRelay(relayHost, relayPort, device.uuid, reTry, reTryTime);
+      connectViaEasyTier(relayHost, relayPort, relayKey, device.serverPort, reTry, reTryTime);
       return;
     }
 
     if (mode == Device.CONN_RELAY) {
       addDebugLog("【connectServer】进入强制 EasyTier 虚拟组网模式");
-      connectRelay(relayHost, relayPort, device.uuid, reTry, reTryTime);
+      connectViaEasyTier(relayHost, relayPort, relayKey, device.serverPort, reTry, reTryTime);
       return;
     }
 
-    addDebugLog("【connectServer】未知模式，兜底走直连");
+    addDebugLog("【connectServer】未知模式，包底走直连");
     connectDirectOrAdb(device, reTry, reTryTime);
+  }
+
+  /**
+   * 通过 EasyTier 虚拟组网连接被控端。
+   * 流程：
+   * 1. 检查 VPN 权限是否已授予
+   * 2. 启动 EasyTierVpnService，等待虚拟 IP 分配（最多等 12 秒）
+   * 3. 用虚拟 IP + serverPort 连接被控端的 scrcpy server
+   */
+  private void connectViaEasyTier(
+    String relayHost, int relayPort, String relayKey,
+    int serverPort, int reTry, int reTryTime
+  ) throws Exception {
+    if (relayHost == null || relayHost.isEmpty()) {
+      throw new Exception(AppData.applicationContext.getString(R.string.error_easytier_host_empty));
+    }
+
+    addDebugLog("【EasyTier】开始启动 VPN 服务 host=" + relayHost + " port=" + relayPort);
+
+    // 检查 VPN 权限
+    Intent vpnIntent = VpnService.prepare(AppData.applicationContext);
+    if (vpnIntent != null) {
+      // 需要用户授权，暂时抛异常提示（后续在 Activity 层面处理弹出请求）
+      throw new Exception("需要用户授予 VPN 权限，请在设置界面开启 VPN 权限后重试");
+    }
+
+    // 启动 EasyTier VPN 服务，等待虚拟 IP
+    final String[] virtualIp = {null};
+    final String[] errorMsg = {null};
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    EasyTierManager.start(
+      AppData.applicationContext,
+      relayHost,
+      relayPort,
+      relayKey,
+      new EasyTierManager.VirtualIpCallback() {
+        @Override
+        public void onVirtualIpReady(String ip) {
+          addDebugLog("【EasyTier】虚拟 IP 已分配: " + ip);
+          virtualIp[0] = ip;
+          latch.countDown();
+        }
+        @Override
+        public void onError(String reason) {
+          addDebugLog("【EasyTier】启动失败: " + reason);
+          errorMsg[0] = reason;
+          latch.countDown();
+        }
+      }
+    );
+
+    // 最多等 12 秒等待虚拟 IP
+    addDebugLog("【EasyTier】等待虚拟 IP 分配...");
+    boolean assigned = latch.await(12, TimeUnit.SECONDS);
+
+    if (!assigned || virtualIp[0] == null) {
+      String err = errorMsg[0] != null ? errorMsg[0] : "等待虚拟 IP 超时";
+      throw new Exception(AppData.applicationContext.getString(R.string.error_easytier_connect_fail) + ": " + err);
+    }
+
+    String targetIp = virtualIp[0];
+    addDebugLog("【EasyTier】用虚拟 IP 连接 scrcpy server: " + targetIp + ":" + serverPort);
+
+    InetSocketAddress addr = new InetSocketAddress(targetIp, serverPort);
+    for (int i = 0; i < reTry; i++) {
+      try {
+        addDebugLog("【EasyTier】连接第" + (i + 1) + "次");
+
+        mainSocket = new Socket();
+        mainSocket.connect(addr, 5000);
+        addDebugLog("【EasyTier】mainSocket 成功");
+
+        videoSocket = new Socket();
+        videoSocket.connect(addr, 5000);
+        addDebugLog("【EasyTier】videoSocket 成功");
+
+        mainOutputStream = mainSocket.getOutputStream();
+        mainDataInputStream = new DataInputStream(mainSocket.getInputStream());
+        videoDataInputStream = new DataInputStream(videoSocket.getInputStream());
+        connectDirect = true;
+
+        addDebugLog("【EasyTier】连接完成");
+        return;
+      } catch (Exception e) {
+        addDebugLog("【EasyTier失败】第" + (i + 1) + "次: " + e.getMessage());
+        try { if (mainSocket != null) mainSocket.close(); } catch (Exception ignored) {}
+        try { if (videoSocket != null) videoSocket.close(); } catch (Exception ignored) {}
+        Thread.sleep(reTryTime);
+      }
+    }
+
+    throw new Exception(AppData.applicationContext.getString(R.string.error_easytier_connect_fail));
   }
 
   private void connectDirectOrAdb(Device device, int reTry, int reTryTime) throws Exception {
@@ -346,16 +438,8 @@ public class ClientStream {
           return;
         } catch (Exception e) {
           addDebugLog("【直连失败】第" + (i + 1) + "次: " + e.getClass().getSimpleName() + ": " + e.getMessage());
-          try {
-            if (mainSocket != null) mainSocket.close();
-          } catch (Exception closeE) {
-            addDebugLog("【直连】关闭mainSocket失败=" + closeE);
-          }
-          try {
-            if (videoSocket != null) videoSocket.close();
-          } catch (Exception closeE) {
-            addDebugLog("【直连】关闭videoSocket失败=" + closeE);
-          }
+          try { if (mainSocket != null) mainSocket.close(); } catch (Exception closeE) { addDebugLog("【直连】关闭mainSocket失败=" + closeE); }
+          try { if (videoSocket != null) videoSocket.close(); } catch (Exception closeE) { addDebugLog("【直连】关闭videoSocket失败=" + closeE); }
 
           if (System.currentTimeMillis() - startTime >= timeoutDelay / 2 - 1000) {
             addDebugLog("【直连】超过半程超时，停止继续尝试");
@@ -402,56 +486,6 @@ public class ClientStream {
     connectDirect = true;
 
     addDebugLog("【直连Only】完成");
-  }
-
-  /**
-   * EasyTier 虚拟组网连接入口。
-   * 当前阶段仍复用原 relayHost / relayPort / relayKey 字段与旧连接分支，
-   * 仅完成语义切换和配置入口预留；这并不代表应用已经内置 EasyTier 节点或自动拉起能力。
-   */
-  private void connectRelay(String relayHost, int relayPort, String uuid, int reTry, int reTryTime) throws Exception {
-    if (relayHost == null || relayHost.isEmpty()) {
-      throw new Exception("EasyTier 节点地址未配置，请先在设置中填写节点地址");
-    }
-
-    addDebugLog("【EasyTier】开始连接 host=" + relayHost + " port=" + relayPort + " uuid=" + uuid);
-
-    for (int i = 0; i < reTry; i++) {
-      try {
-        addDebugLog("【EasyTier】第" + (i + 1) + "次");
-
-        mainSocket = new Socket();
-        mainSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
-        addDebugLog("【EasyTier】mainSocket连接成功");
-
-        videoSocket = new Socket();
-        videoSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
-        addDebugLog("【EasyTier】videoSocket连接成功");
-
-        mainOutputStream = mainSocket.getOutputStream();
-        mainDataInputStream = new DataInputStream(mainSocket.getInputStream());
-        videoDataInputStream = new DataInputStream(videoSocket.getInputStream());
-        connectDirect = true;
-
-        addDebugLog("【EasyTier】输入输出流初始化完成");
-        return;
-      } catch (Exception e) {
-        addDebugLog("【EasyTier失败】第" + (i + 1) + "次: " + e.getClass().getSimpleName() + ": " + e.getMessage());
-        try {
-          if (mainSocket != null) mainSocket.close();
-        } catch (Exception closeE) {
-          addDebugLog("【EasyTier】关闭mainSocket失败=" + closeE);
-        }
-        try {
-          if (videoSocket != null) videoSocket.close();
-        } catch (Exception closeE) {
-          addDebugLog("【EasyTier】关闭videoSocket失败=" + closeE);
-        }
-        Thread.sleep(reTryTime);
-      }
-    }
-
-    throw new Exception("EasyTier 虚拟组网连接失败，请检查节点地址和端口");
   }
 
   public String runShell(String cmd) throws Exception {
@@ -534,42 +568,14 @@ public class ClientStream {
     }
 
     if (connectDirect) {
-      try {
-        if (mainOutputStream != null) mainOutputStream.close();
-      } catch (Exception e) {
-        addDebugLog("【close】关闭mainOutputStream失败=" + e);
-      }
-      try {
-        if (videoDataInputStream != null) videoDataInputStream.close();
-      } catch (Exception e) {
-        addDebugLog("【close】关闭videoDataInputStream失败=" + e);
-      }
-      try {
-        if (mainDataInputStream != null) mainDataInputStream.close();
-      } catch (Exception e) {
-        addDebugLog("【close】关闭mainDataInputStream失败=" + e);
-      }
-      try {
-        if (mainSocket != null) mainSocket.close();
-      } catch (Exception e) {
-        addDebugLog("【close】关闭mainSocket失败=" + e);
-      }
-      try {
-        if (videoSocket != null) videoSocket.close();
-      } catch (Exception e) {
-        addDebugLog("【close】关闭videoSocket失败=" + e);
-      }
+      try { if (mainOutputStream != null) mainOutputStream.close(); } catch (Exception e) { addDebugLog("【close】关闭mainOutputStream失败=" + e); }
+      try { if (videoDataInputStream != null) videoDataInputStream.close(); } catch (Exception e) { addDebugLog("【close】关闭videoDataInputStream失败=" + e); }
+      try { if (mainDataInputStream != null) mainDataInputStream.close(); } catch (Exception e) { addDebugLog("【close】关闭mainDataInputStream失败=" + e); }
+      try { if (mainSocket != null) mainSocket.close(); } catch (Exception e) { addDebugLog("【close】关闭mainSocket失败=" + e); }
+      try { if (videoSocket != null) videoSocket.close(); } catch (Exception e) { addDebugLog("【close】关闭videoSocket失败=" + e); }
     } else {
-      try {
-        if (mainBufferStream != null) mainBufferStream.close();
-      } catch (Exception e) {
-        addDebugLog("【close】关闭mainBufferStream失败=" + e);
-      }
-      try {
-        if (videoBufferStream != null) videoBufferStream.close();
-      } catch (Exception e) {
-        addDebugLog("【close】关闭videoBufferStream失败=" + e);
-      }
+      try { if (mainBufferStream != null) mainBufferStream.close(); } catch (Exception e) { addDebugLog("【close】关闭mainBufferStream失败=" + e); }
+      try { if (videoBufferStream != null) videoBufferStream.close(); } catch (Exception e) { addDebugLog("【close】关闭videoBufferStream失败=" + e); }
     }
   }
 }
