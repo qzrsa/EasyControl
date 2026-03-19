@@ -39,7 +39,6 @@ public final class Setting {
     return sharedPreferences.getString("UUID", "");
   }
 
-  // 全局默认连接模式
   public int getDefaultConnMode() {
     return sharedPreferences.getInt("defaultConnMode", Device.CONN_DIRECT);
   }
@@ -49,7 +48,6 @@ public final class Setting {
     editor.apply();
   }
 
-  // 全局默认 EasyTier 节点地址（暂复用原 relayHost 键）
   public String getDefaultRelayHost() {
     return sharedPreferences.getString("defaultRelayHost", "");
   }
@@ -59,7 +57,6 @@ public final class Setting {
     editor.apply();
   }
 
-  // 全局默认 EasyTier 端口（暂复用原 relayPort 键）
   public int getDefaultRelayPort() {
     return sharedPreferences.getInt("defaultRelayPort", 11010);
   }
@@ -69,7 +66,15 @@ public final class Setting {
     editor.apply();
   }
 
-  // 全局默认 EasyTier 网络密钥（暂复用原 relayKey 键）
+  public String getDefaultRelayNetworkName() {
+    return sharedPreferences.getString("defaultRelayNetworkName", "");
+  }
+
+  public void setDefaultRelayNetworkName(String value) {
+    editor.putString("defaultRelayNetworkName", value);
+    editor.apply();
+  }
+
   public String getDefaultRelayKey() {
     return sharedPreferences.getString("defaultRelayKey", "");
   }
