@@ -9,7 +9,11 @@ import android.os.Bundle;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -68,6 +72,10 @@ public class DeviceDetailActivity extends Activity {
     activityDeviceDetailBinding.customResolution.setVisibility(device.customResolutionOnConnect ? View.VISIBLE : View.GONE);
     activityDeviceDetailBinding.customResolutionWidth.setText(String.valueOf(device.customResolutionWidth));
     activityDeviceDetailBinding.customResolutionHeight.setText(String.valueOf(device.customResolutionHeight));
+    
+    // ===== 连接模式设置 =====
+    addConnectModeSettings();
+    
     // 连接时操作
     activityDeviceDetailBinding.layoutOnConnect.setOnClickListener(v -> activityDeviceDetailBinding.layoutOnConnectSub.setVisibility(activityDeviceDetailBinding.layoutOnConnectSub.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE));
     activityDeviceDetailBinding.layoutOnConnectSub.addView(ViewTools.createSwitchCard(this, getString(R.string.device_custom_resolution_on_connect), getString(R.string.device_custom_resolution_on_connect_detail), device.customResolutionOnConnect, isChecked -> activityDeviceDetailBinding.customResolution.setVisibility(isChecked ? View.VISIBLE : View.GONE)).getRoot(), 0);
@@ -100,6 +108,104 @@ public class DeviceDetailActivity extends Activity {
     activityDeviceDetailBinding.layoutOptionSub.addView(ViewTools.createSwitchCard(this, getString(R.string.device_use_h265), getString(R.string.device_use_h265_detail), device.useH265, isChecked -> device.useH265 = isChecked).getRoot());
     activityDeviceDetailBinding.layoutOptionSub.addView(ViewTools.createSwitchCard(this, getString(R.string.device_connect_on_start), getString(R.string.device_connect_on_start_detail), device.connectOnStart, isChecked -> device.connectOnStart = isChecked).getRoot());
   }
+  
+  /**
+   * 添加连接模式设置
+   */
+  private ViewGroup relaySettingsLayout;
+  
+  private void addConnectModeSettings() {
+    // 创建连接模式选择卡片
+    View modeCard = createConnectModeCard();
+    activityDeviceDetailBinding.layoutOptionSub.addView(modeCard, 0);
+  }
+  
+  /**
+   * 创建连接模式选择卡片
+   */
+  private View createConnectModeCard() {
+    // 创建容器
+    ViewGroup container = (ViewGroup) getLayoutInflater().inflate(R.layout.item_connect_mode, null);
+    
+    // 标题
+    TextView titleView = container.findViewById(R.id.text_title);
+    if (titleView != null) {
+      titleView.setText("连接模式");
+    }
+    
+    // 说明
+    TextView detailView = container.findViewById(R.id.text_detail);
+    if (detailView != null) {
+      detailView.setText("选择设备连接方式");
+    }
+    
+    // RadioGroup
+    RadioGroup radioGroup = container.findViewById(R.id.radio_group_connect_mode);
+    if (radioGroup != null) {
+      // 添加各个模式选项
+      String[] modeNames = Device.CONNECT_MODE_NAMES;
+      String[] modeDescriptions = {
+        "通过ADB协议连接，支持USB和网络ADB（默认）",
+        "直接TCP连接到设备Server端口",
+        "通过中继服务器打洞建立直连",
+        "所有流量通过中继服务器转发"
+      };
+      
+      for (int i = 0; i < modeNames.length; i++) {
+        RadioButton rb = new RadioButton(this);
+        rb.setText(modeNames[i] + " - " + modeDescriptions[i]);
+        rb.setId(View.generateViewId());
+        rb.setTag(i);
+        radioGroup.addView(rb);
+        
+        if (i == device.connectMode) {
+          rb.setChecked(true);
+        }
+      }
+      
+      radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+        RadioButton rb = group.findViewById(checkedId);
+        if (rb != null && rb.getTag() != null) {
+          device.connectMode = (int) rb.getTag();
+          updateRelaySettingsVisibility();
+        }
+      });
+    }
+    
+    // 中继设置区域
+    relaySettingsLayout = container.findViewById(R.id.layout_relay_settings);
+    updateRelaySettingsVisibility();
+    
+    // 中继服务器地址
+    TextView relayServerInput = container.findViewById(R.id.input_relay_server);
+    if (relayServerInput != null) {
+      relayServerInput.setText(device.relayServer);
+    }
+    
+    // 中继端口
+    TextView relayPortInput = container.findViewById(R.id.input_relay_port);
+    if (relayPortInput != null) {
+      relayPortInput.setText(String.valueOf(device.relayPort));
+    }
+    
+    // 连接令牌
+    TextView relayTokenInput = container.findViewById(R.id.input_relay_token);
+    if (relayTokenInput != null) {
+      relayTokenInput.setText(device.relayToken);
+    }
+    
+    return container;
+  }
+  
+  /**
+   * 更新中继设置区域的可见性
+   */
+  private void updateRelaySettingsVisibility() {
+    if (relaySettingsLayout != null) {
+      boolean visible = device.needsRelayServer();
+      relaySettingsLayout.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+  }
 
   // 设置监听
   private void setListener() {
@@ -118,6 +224,28 @@ public class DeviceDetailActivity extends Activity {
       device.startApp = String.valueOf(activityDeviceDetailBinding.startApp.getText());
       device.adbPort = Integer.parseInt(String.valueOf(activityDeviceDetailBinding.adbPort.getText()));
       device.serverPort = Integer.parseInt(String.valueOf(activityDeviceDetailBinding.serverPort.getText()));
+      
+      // 读取中继设置
+      if (relaySettingsLayout != null && relaySettingsLayout.getVisibility() == View.VISIBLE) {
+        TextView relayServerInput = relaySettingsLayout.findViewById(R.id.input_relay_server);
+        TextView relayPortInput = relaySettingsLayout.findViewById(R.id.input_relay_port);
+        TextView relayTokenInput = relaySettingsLayout.findViewById(R.id.input_relay_token);
+        
+        if (relayServerInput != null) {
+          device.relayServer = String.valueOf(relayServerInput.getText());
+        }
+        if (relayPortInput != null) {
+          try {
+            device.relayPort = Integer.parseInt(String.valueOf(relayPortInput.getText()));
+          } catch (NumberFormatException e) {
+            device.relayPort = 25167;
+          }
+        }
+        if (relayTokenInput != null) {
+          device.relayToken = String.valueOf(relayTokenInput.getText());
+        }
+      }
+      
       // 自定义分辨率
       String width = String.valueOf(activityDeviceDetailBinding.customResolutionWidth.getText());
       String height = String.valueOf(activityDeviceDetailBinding.customResolutionHeight.getText());

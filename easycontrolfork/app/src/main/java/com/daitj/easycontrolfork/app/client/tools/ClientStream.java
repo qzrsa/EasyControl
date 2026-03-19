@@ -17,6 +17,14 @@ import com.daitj.easycontrolfork.app.entity.Device;
 import com.daitj.easycontrolfork.app.entity.MyInterface;
 import com.daitj.easycontrolfork.app.helper.PublicTools;
 
+/**
+ * 客户端连接流
+ * 支持多种连接模式：
+ * - ADB模式：通过ADB协议连接（USB/网络ADB）
+ * - 直连模式：直接TCP连接到设备Server端口
+ * - P2P模式：通过中继服务器打洞建立直连
+ * - 中转模式：所有流量通过中继服务器转发
+ */
 public class ClientStream {
   private boolean isClose = false;
   private boolean connectDirect = false;
@@ -35,6 +43,9 @@ public class ClientStream {
   private static final boolean supportOpus = DecodecTools.isSupportOpus();
 
   private static final int timeoutDelay = 1000 * 15;
+  
+  // 中继客户端
+  private RelayClient relayClient;
 
   // 统计信息覆盖层
   private final StatsOverlay statsOverlay = new StatsOverlay();
@@ -55,9 +66,22 @@ public class ClientStream {
     });
     connectThread = new Thread(() -> {
       try {
-        adb = AdbTools.connectADB(device);
-        startServer(device);
-        connectServer(device);
+        // 根据连接模式选择连接方式
+        switch (device.connectMode) {
+          case Device.CONNECT_MODE_DIRECT:
+            connectDirectMode(device);
+            break;
+          case Device.CONNECT_MODE_P2P:
+            connectP2PMode(device);
+            break;
+          case Device.CONNECT_MODE_RELAY:
+            connectRelayMode(device);
+            break;
+          case Device.CONNECT_MODE_ADB:
+          default:
+            connectAdbMode(device);
+            break;
+        }
         handle.run(true);
       } catch (Exception e) {
         PublicTools.logToast("stream", e.toString(), true);
@@ -68,6 +92,103 @@ public class ClientStream {
     });
     connectThread.start();
     timeOutThread.start();
+  }
+  
+  /**
+   * ADB 模式连接（默认）
+   */
+  private void connectAdbMode(Device device) throws Exception {
+    adb = AdbTools.connectADB(device);
+    startServer(device);
+    connectServer(device);
+  }
+  
+  /**
+   * 直连模式
+   * 直接TCP连接到设备Server端口，不需要ADB
+   */
+  private void connectDirectMode(Device device) throws Exception {
+    // 直连模式需要先确保Server已启动
+    // 可以通过之前ADB连接过，或设备端设置为开机自启
+    connectDirectTcp(device, device.address, device.serverPort);
+  }
+  
+  /**
+   * P2P 模式
+   * 通过中继服务器打洞建立直连
+   */
+  private void connectP2PMode(Device device) throws Exception {
+    relayClient = new RelayClient(device);
+    relayClient.connectToRelay();
+    
+    if (relayClient.requestP2P()) {
+      // P2P 打洞成功
+      String host = relayClient.getP2PHost();
+      int port = relayClient.getP2PPort();
+      connectDirectTcp(device, host, port);
+    } else {
+      // P2P 失败，回退到中转模式
+      PublicTools.logToast("stream", "P2P打洞失败，回退到中转模式", true);
+      int relayPort = relayClient.requestRelay();
+      Socket relaySocket = relayClient.createRelaySocket(relayPort);
+      setupRelayConnection(relaySocket);
+    }
+  }
+  
+  /**
+   * 中转模式
+   * 所有流量通过中继服务器转发
+   */
+  private void connectRelayMode(Device device) throws Exception {
+    relayClient = new RelayClient(device);
+    relayClient.connectToRelay();
+    int relayPort = relayClient.requestRelay();
+    Socket relaySocket = relayClient.createRelaySocket(relayPort);
+    setupRelayConnection(relaySocket);
+  }
+  
+  /**
+   * 建立直接TCP连接
+   */
+  private void connectDirectTcp(Device device, String host, int port) throws Exception {
+    Thread.sleep(50);
+    int reTry = 40;
+    int reTryTime = timeoutDelay / reTry;
+    
+    long startTime = System.currentTimeMillis();
+    InetSocketAddress inetSocketAddress = new InetSocketAddress(host, port);
+    
+    for (int i = 0; i < reTry; i++) {
+      try {
+        mainSocket = new Socket();
+        mainSocket.connect(inetSocketAddress, timeoutDelay / 2);
+        videoSocket = new Socket();
+        videoSocket.connect(inetSocketAddress, timeoutDelay / 2);
+        
+        mainOutputStream = mainSocket.getOutputStream();
+        mainDataInputStream = new DataInputStream(mainSocket.getInputStream());
+        videoDataInputStream = new DataInputStream(videoSocket.getInputStream());
+        connectDirect = true;
+        return;
+      } catch (Exception ignored) {
+        if (mainSocket != null) mainSocket.close();
+        if (videoSocket != null) videoSocket.close();
+        if (System.currentTimeMillis() - startTime >= timeoutDelay / 2 - 1000) i = reTry;
+        else Thread.sleep(reTryTime);
+      }
+    }
+    throw new Exception("直连模式连接失败");
+  }
+  
+  /**
+   * 设置中转连接
+   */
+  private void setupRelayConnection(Socket socket) throws IOException {
+    mainSocket = socket;
+    mainOutputStream = mainSocket.getOutputStream();
+    mainDataInputStream = new DataInputStream(mainSocket.getInputStream());
+    videoDataInputStream = mainDataInputStream;  // 中转模式共用一个连接
+    connectDirect = true;
   }
 
   private void startServer(Device device) throws Exception {
@@ -190,7 +311,6 @@ public class ClientStream {
 
   /**
    * 发送 keepAlive 并测量 RTT 延迟，结果上报给 StatsOverlay
-   * 注意：需要在发送 keepAlive 前后计时，此处仅记录发送时间戳供外部调用
    */
   public void writeToMainWithLatency(ByteBuffer byteBuffer) throws Exception {
     long start = System.currentTimeMillis();
@@ -203,18 +323,31 @@ public class ClientStream {
     if (isClose) return;
     isClose = true;
     if (shell != null) PublicTools.logToast("server", new String(shell.readByteArrayBeforeClose().array()), false);
+    // 关闭中继客户端
+    if (relayClient != null) {
+      relayClient.close();
+    }
     if (connectDirect) {
       try {
         mainOutputStream.close();
         videoDataInputStream.close();
         mainDataInputStream.close();
         mainSocket.close();
-        videoSocket.close();
+        if (videoSocket != null && videoSocket != mainSocket) {
+          videoSocket.close();
+        }
       } catch (Exception ignored) {
       }
     } else {
       mainBufferStream.close();
       videoBufferStream.close();
     }
+  }
+  
+  /**
+   * 获取当前连接模式名称
+   */
+  public String getConnectModeName() {
+    return Device.CONNECT_MODE_NAMES[connectDirect ? Device.CONNECT_MODE_DIRECT : Device.CONNECT_MODE_ADB];
   }
 }

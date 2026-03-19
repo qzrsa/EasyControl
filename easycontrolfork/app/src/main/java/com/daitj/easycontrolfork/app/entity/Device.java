@@ -3,8 +3,20 @@ package com.daitj.easycontrolfork.app.entity;
 import java.util.Objects;
 
 public class Device {
+  // 设备类型
   public static final int TYPE_NETWORK = 1;
   public static final int TYPE_LINK = 2;
+  
+  // 连接模式
+  public static final int CONNECT_MODE_ADB = 0;      // ADB模式（默认）
+  public static final int CONNECT_MODE_DIRECT = 1;   // 直连模式
+  public static final int CONNECT_MODE_P2P = 2;      // P2P模式
+  public static final int CONNECT_MODE_RELAY = 3;    // 中转模式
+  
+  public static final String[] CONNECT_MODE_NAMES = {
+    "ADB模式", "直连模式", "P2P模式", "中转模式"
+  };
+  
   public final String uuid;
   public final int type;
   public String name;
@@ -12,6 +24,15 @@ public class Device {
   public String startApp = "";
   public int adbPort = 5555;
   public int serverPort = 25166;
+  
+  // 连接模式
+  public int connectMode = CONNECT_MODE_ADB;
+  
+  // 中继服务器配置
+  public String relayServer = "";      // 中继服务器地址
+  public int relayPort = 25167;        // 中继服务器端口
+  public String relayToken = "";       // 连接令牌（P2P/中转用）
+  
   public boolean listenClip=true;
   public boolean isAudio = true;
   public int maxSize = 1600;
@@ -59,6 +80,30 @@ public class Device {
   public boolean isTempDevice() {
     return Objects.equals(name, "----");
   }
+  
+  /**
+   * 获取连接模式名称
+   */
+  public String getConnectModeName() {
+    if (connectMode >= 0 && connectMode < CONNECT_MODE_NAMES.length) {
+      return CONNECT_MODE_NAMES[connectMode];
+    }
+    return CONNECT_MODE_NAMES[CONNECT_MODE_ADB];
+  }
+  
+  /**
+   * 是否需要中继服务器
+   */
+  public boolean needsRelayServer() {
+    return connectMode == CONNECT_MODE_P2P || connectMode == CONNECT_MODE_RELAY;
+  }
+  
+  /**
+   * 是否使用直接TCP连接（直连/P2P/中转都走TCP）
+   */
+  public boolean useDirectTcp() {
+    return connectMode != CONNECT_MODE_ADB;
+  }
 
   public Device clone(String uuid) {
     Device newDevice = new Device(uuid, type);
@@ -67,6 +112,10 @@ public class Device {
     newDevice.startApp = startApp;
     newDevice.adbPort = adbPort;
     newDevice.serverPort = serverPort;
+    newDevice.connectMode = connectMode;
+    newDevice.relayServer = relayServer;
+    newDevice.relayPort = relayPort;
+    newDevice.relayToken = relayToken;
     newDevice.listenClip = listenClip;
     newDevice.isAudio = isAudio;
     newDevice.maxSize = maxSize;

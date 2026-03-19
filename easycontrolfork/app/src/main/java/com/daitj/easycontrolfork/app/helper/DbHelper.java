@@ -14,7 +14,7 @@ import com.daitj.easycontrolfork.app.entity.Device;
 public class DbHelper extends SQLiteOpenHelper {
 
   private static final String dataBaseName = "app.db";
-  private static final int version = 23;
+  private static final int version = 24;  // 版本号升级
   private final String tableName = "DevicesDb";
 
   public DbHelper(Context context) {
@@ -32,6 +32,11 @@ public class DbHelper extends SQLiteOpenHelper {
     stringBuilder.append("startApp text,");
     stringBuilder.append("adbPort integer,");
     stringBuilder.append("serverPort integer,");
+    // 连接模式字段
+    stringBuilder.append("connectMode integer,");
+    stringBuilder.append("relayServer text,");
+    stringBuilder.append("relayPort integer,");
+    stringBuilder.append("relayToken text,");
     stringBuilder.append("listenClip integer,");
     stringBuilder.append("isAudio integer,");
     stringBuilder.append("maxSize integer,");
@@ -129,6 +134,11 @@ public class DbHelper extends SQLiteOpenHelper {
     values.put("startApp", device.startApp);
     values.put("adbPort", device.adbPort);
     values.put("serverPort", device.serverPort);
+    // 连接模式
+    values.put("connectMode", device.connectMode);
+    values.put("relayServer", device.relayServer);
+    values.put("relayPort", device.relayPort);
+    values.put("relayToken", device.relayToken);
     values.put("listenClip", device.listenClip ? 1 : 0);
     values.put("isAudio", device.isAudio ? 1 : 0);
     values.put("maxSize", device.maxSize);
@@ -184,6 +194,23 @@ public class DbHelper extends SQLiteOpenHelper {
         }
         case "serverPort": {
           device.serverPort = cursor.getInt(i);
+          break;
+        }
+        // 连接模式
+        case "connectMode": {
+          device.connectMode = cursor.getInt(i);
+          break;
+        }
+        case "relayServer": {
+          device.relayServer = cursor.getString(i);
+          break;
+        }
+        case "relayPort": {
+          device.relayPort = cursor.getInt(i);
+          break;
+        }
+        case "relayToken": {
+          device.relayToken = cursor.getString(i);
           break;
         }
         case "listenClip": {
