@@ -1,4 +1,4 @@
-﻿package com.scrcpy.server.entity;
+package com.scrcpy.server.entity;
 
 public final class Options {
   public static int serverPort=25166;

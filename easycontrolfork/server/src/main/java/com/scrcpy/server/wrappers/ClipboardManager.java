@@ -1,4 +1,4 @@
-﻿package com.scrcpy.server.wrappers;
+package com.scrcpy.server.wrappers;
 
 import android.content.ClipData;
 import android.content.IOnPrimaryClipChangedListener;

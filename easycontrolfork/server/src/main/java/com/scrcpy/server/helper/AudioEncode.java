@@ -1,4 +1,4 @@
-﻿package com.scrcpy.server.helper;
+package com.scrcpy.server.helper;
 
 import android.media.AudioRecord;
 import android.media.MediaCodec;

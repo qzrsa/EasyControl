@@ -1,4 +1,4 @@
-﻿package com.scrcpy.server;
+package com.scrcpy.server;
 
 import android.annotation.SuppressLint;
 import android.os.IBinder;
