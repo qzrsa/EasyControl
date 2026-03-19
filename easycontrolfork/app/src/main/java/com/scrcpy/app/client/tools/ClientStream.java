@@ -104,7 +104,7 @@ public class ClientStream {
     
     shell = adb.getShell();
     
-    // Start server via runAdbCmd to capture output
+    // Start server in background with output redirection
     String cmd = "/system/bin/app_process -Djava.class.path=" + serverName + " / com.scrcpy.server.Server"
       + " serverPort=" + device.serverPort
       + " listenClip=" + (device.listenClip ? 1 : 0)
@@ -115,38 +115,29 @@ public class ClientStream {
       + " keepAwake=" + (device.keepWakeOnRunning ? 1 : 0)
       + " supportH265=" + ((device.useH265 && supportH265) ? 1 : 0)
       + " supportOpus=" + (supportOpus ? 1 : 0)
-      + " startApp=" + device.startApp;
+      + " startApp=" + device.startApp + " > /data/local/tmp/server.log 2>&1 & echo $!\n";
     
-    Logger.d(TAG, "Starting server via runAdbCmd: " + cmd);
-    
-    // Run server in background, redirect output to log file
-    try {
-      String result = adb.runAdbCmd(cmd + " > /data/local/tmp/server.log 2>&1 &");
-      Logger.d(TAG, "Server start result: " + (result != null ? result : "null"));
-    } catch (Exception e) {
-      Logger.e(TAG, "Error starting server: " + e.getMessage());
-    }
+    Logger.d(TAG, "Starting server with command: " + cmd.trim());
+    shell.write(ByteBuffer.wrap(cmd.getBytes()));
     
     // Wait for server to start
-    Thread.sleep(1000);
+    Thread.sleep(500);
     Logger.i(TAG, "Server command sent, waiting for startup...");
     
-    // Try to read any error output
+    // Check if server process is running
     try {
-      String errorLog = adb.runAdbCmd("cat /data/local/tmp/server.log 2>/dev/null || echo 'No log file'");
-      if (errorLog != null && !errorLog.isEmpty()) {
-        Logger.e(TAG, "Server log: " + errorLog);
-      }
+      String psResult = adb.runAdbCmd("ps -A | grep app_process");
+      Logger.d(TAG, "Process check: " + (psResult != null ? psResult : "no processes"));
     } catch (Exception e) {
-      Logger.d(TAG, "Could not read server log: " + e.getMessage());
+      Logger.d(TAG, "Could not check process: " + e.getMessage());
     }
   }
 
   private void connectServer(Device device) throws Exception {
     Logger.method(TAG, "connectServer");
     
-    // Wait longer for server to start (increased from 50ms to 500ms)
-    Thread.sleep(500);
+    // Wait for server to start (increased from 500ms to 2000ms)
+    Thread.sleep(2000);
     int reTry = 40;
     int reTryTime = timeoutDelay / reTry;
     
