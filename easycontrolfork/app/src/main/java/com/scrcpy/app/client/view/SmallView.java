@@ -1,4 +1,4 @@
-﻿package com.scrcpy.app.client.view;
+package com.scrcpy.app.client.view;
 
 import android.annotation.SuppressLint;
 import android.graphics.Outline;

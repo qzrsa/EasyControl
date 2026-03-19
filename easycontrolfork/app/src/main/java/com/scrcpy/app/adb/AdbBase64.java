@@ -1,4 +1,4 @@
-﻿package com.scrcpy.app.adb;
+package com.scrcpy.app.adb;
 
 public interface AdbBase64 {
   String encodeToString(byte[] data);
