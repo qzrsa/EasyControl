@@ -49,7 +49,7 @@ public final class Setting {
     editor.apply();
   }
 
-  // 全局默认服务器地址
+  // 全局默认 EasyTier 节点地址（暂复用原 relayHost 键）
   public String getDefaultRelayHost() {
     return sharedPreferences.getString("defaultRelayHost", "");
   }
@@ -59,9 +59,9 @@ public final class Setting {
     editor.apply();
   }
 
-  // 全局默认服务器端口
+  // 全局默认 EasyTier 端口（暂复用原 relayPort 键）
   public int getDefaultRelayPort() {
-    return sharedPreferences.getInt("defaultRelayPort", 25167);
+    return sharedPreferences.getInt("defaultRelayPort", 11010);
   }
 
   public void setDefaultRelayPort(int value) {
@@ -69,7 +69,7 @@ public final class Setting {
     editor.apply();
   }
 
-  // 全局默认服务器密钥
+  // 全局默认 EasyTier 网络密钥（暂复用原 relayKey 键）
   public String getDefaultRelayKey() {
     return sharedPreferences.getString("defaultRelayKey", "");
   }
