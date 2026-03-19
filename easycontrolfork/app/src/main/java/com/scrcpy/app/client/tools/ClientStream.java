@@ -104,8 +104,13 @@ public class ClientStream {
     
     shell = adb.getShell();
     
-    // Try with full path to app_process
-    String cmd = "app_process -Djava.class.path=" + serverName + " / com.scrcpy.server.Server"
+    // Use full path to app_process and check if it exists first
+    String checkCmd = "which app_process || ls /system/bin/app_process64 || ls /system/bin/app_process32 || ls /system/bin/app_process\n";
+    shell.write(ByteBuffer.wrap(checkCmd.getBytes()));
+    Thread.sleep(200);
+    
+    // Use full path based on common Android locations
+    String cmd = "/system/bin/app_process -Djava.class.path=" + serverName + " / com.scrcpy.server.Server"
       + " serverPort=" + device.serverPort
       + " listenClip=" + (device.listenClip ? 1 : 0)
       + " isAudio=" + (device.isAudio ? 1 : 0)
