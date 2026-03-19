@@ -218,15 +218,15 @@ public class ClientStream {
       try {
         String host = AppData.setting.getDefaultRelayHost();
         if (host != null && !host.isEmpty()) {
-          addDebugLog("【配置】使用全局 relayHost=" + host);
+          addDebugLog("【配置】使用全局 EasyTier 节点地址=" + host);
           return host;
         }
       } catch (Exception e) {
-        addDebugLog("【配置】读取全局 relayHost 失败=" + e);
+        addDebugLog("【配置】读取全局 EasyTier 节点地址失败=" + e);
       }
     }
     String host = device.relayHost != null ? device.relayHost : "";
-    addDebugLog("【配置】使用设备 relayHost=" + host);
+    addDebugLog("【配置】使用设备 EasyTier 节点地址=" + host);
     return host;
   }
 
@@ -235,15 +235,15 @@ public class ClientStream {
       try {
         int port = AppData.setting.getDefaultRelayPort();
         if (port > 0) {
-          addDebugLog("【配置】使用全局 relayPort=" + port);
+          addDebugLog("【配置】使用全局 EasyTier 端口=" + port);
           return port;
         }
       } catch (Exception e) {
-        addDebugLog("【配置】读取全局 relayPort 失败=" + e);
+        addDebugLog("【配置】读取全局 EasyTier 端口失败=" + e);
       }
     }
-    int port = device.relayPort > 0 ? device.relayPort : 25167;
-    addDebugLog("【配置】使用设备 relayPort=" + port);
+    int port = device.relayPort > 0 ? device.relayPort : 11010;
+    addDebugLog("【配置】使用设备 EasyTier 端口=" + port);
     return port;
   }
 
@@ -252,15 +252,15 @@ public class ClientStream {
       try {
         String key = AppData.setting.getDefaultRelayKey();
         if (key != null) {
-          addDebugLog("【配置】使用全局 relayKey 长度=" + key.length());
+          addDebugLog("【配置】使用全局 EasyTier 网络密钥长度=" + key.length());
           return key;
         }
       } catch (Exception e) {
-        addDebugLog("【配置】读取全局 relayKey 失败=" + e);
+        addDebugLog("【配置】读取全局 EasyTier 网络密钥失败=" + e);
       }
     }
     String key = device.relayKey != null ? device.relayKey : "";
-    addDebugLog("【配置】使用设备 relayKey 长度=" + key.length());
+    addDebugLog("【配置】使用设备 EasyTier 网络密钥长度=" + key.length());
     return key;
   }
 
@@ -277,9 +277,9 @@ public class ClientStream {
     addDebugLog("【connectServer】mode=" + mode
       + " address=" + device.address
       + " serverPort=" + device.serverPort
-      + " relayHost=" + relayHost
-      + " relayPort=" + relayPort
-      + " relayKeyLen=" + relayKey.length()
+      + " easyTierHost=" + relayHost
+      + " easyTierPort=" + relayPort
+      + " easyTierKeyLen=" + relayKey.length()
       + " useGlobalRelay=" + device.useGlobalRelay
       + " isLinkDevice=" + device.isLinkDevice());
 
@@ -301,13 +301,13 @@ public class ClientStream {
           addDebugLog("【connectServer】自动模式直连失败=" + e);
         }
       }
-      addDebugLog("【connectServer】自动模式转中转");
+      addDebugLog("【connectServer】自动模式切换到 EasyTier 虚拟组网");
       connectRelay(relayHost, relayPort, device.uuid, reTry, reTryTime);
       return;
     }
 
     if (mode == Device.CONN_RELAY) {
-      addDebugLog("【connectServer】进入强制中转模式");
+      addDebugLog("【connectServer】进入强制 EasyTier 虚拟组网模式");
       connectRelay(relayHost, relayPort, device.uuid, reTry, reTryTime);
       return;
     }
@@ -404,49 +404,54 @@ public class ClientStream {
     addDebugLog("【直连Only】完成");
   }
 
+  /**
+   * EasyTier 虚拟组网连接入口。
+   * 当前阶段仍复用原 relayHost / relayPort / relayKey 字段与旧连接分支，
+   * 仅完成语义切换和配置入口预留；这并不代表应用已经内置 EasyTier 节点或自动拉起能力。
+   */
   private void connectRelay(String relayHost, int relayPort, String uuid, int reTry, int reTryTime) throws Exception {
     if (relayHost == null || relayHost.isEmpty()) {
-      throw new Exception("服务器地址未配置，请在设置中填写服务器地址");
+      throw new Exception("EasyTier 节点地址未配置，请先在设置中填写节点地址");
     }
 
-    addDebugLog("【中转】开始连接 relayHost=" + relayHost + " relayPort=" + relayPort + " uuid=" + uuid);
+    addDebugLog("【EasyTier】开始连接 host=" + relayHost + " port=" + relayPort + " uuid=" + uuid);
 
     for (int i = 0; i < reTry; i++) {
       try {
-        addDebugLog("【中转】第" + (i + 1) + "次");
+        addDebugLog("【EasyTier】第" + (i + 1) + "次");
 
         mainSocket = new Socket();
         mainSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
-        addDebugLog("【中转】mainSocket连接成功");
+        addDebugLog("【EasyTier】mainSocket连接成功");
 
         videoSocket = new Socket();
         videoSocket.connect(new InetSocketAddress(relayHost, relayPort), 5000);
-        addDebugLog("【中转】videoSocket连接成功");
+        addDebugLog("【EasyTier】videoSocket连接成功");
 
         mainOutputStream = mainSocket.getOutputStream();
         mainDataInputStream = new DataInputStream(mainSocket.getInputStream());
         videoDataInputStream = new DataInputStream(videoSocket.getInputStream());
         connectDirect = true;
 
-        addDebugLog("【中转】输入输出流初始化完成");
+        addDebugLog("【EasyTier】输入输出流初始化完成");
         return;
       } catch (Exception e) {
-        addDebugLog("【中转失败】第" + (i + 1) + "次: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+        addDebugLog("【EasyTier失败】第" + (i + 1) + "次: " + e.getClass().getSimpleName() + ": " + e.getMessage());
         try {
           if (mainSocket != null) mainSocket.close();
         } catch (Exception closeE) {
-          addDebugLog("【中转】关闭mainSocket失败=" + closeE);
+          addDebugLog("【EasyTier】关闭mainSocket失败=" + closeE);
         }
         try {
           if (videoSocket != null) videoSocket.close();
         } catch (Exception closeE) {
-          addDebugLog("【中转】关闭videoSocket失败=" + closeE);
+          addDebugLog("【EasyTier】关闭videoSocket失败=" + closeE);
         }
         Thread.sleep(reTryTime);
       }
     }
 
-    throw new Exception("服务器中转连接失败，请检查服务器地址和端口");
+    throw new Exception("EasyTier 虚拟组网连接失败，请检查节点地址和端口");
   }
 
   public String runShell(String cmd) throws Exception {
