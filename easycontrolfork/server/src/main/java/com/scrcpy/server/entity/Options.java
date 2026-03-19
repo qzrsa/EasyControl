@@ -1,6 +1,8 @@
 package com.scrcpy.server.entity;
 
 public final class Options {
+  private static final String TAG = "Options";
+  
   public static int serverPort=25166;
   public static boolean listenerClip=true;
   public static boolean isAudio = true;
@@ -11,17 +13,27 @@ public final class Options {
   public static boolean supportH265 = true;
   public static boolean supportOpus = true;
   public static String startApp = "";
+  
+  private static void log(String message) {
+    System.out.println("[" + TAG + "] " + message);
+  }
 
   public static void parse(String... args) {
+    log("Parsing args: " + args.length);
     for (String arg : args) {
+      log("Arg: " + arg);
       int equalIndex = arg.indexOf('=');
-      if (equalIndex == -1) throw new IllegalArgumentException("");
+      if (equalIndex == -1) {
+        log("Invalid arg format (no '='): " + arg);
+        throw new IllegalArgumentException("");
+      }
       String key = arg.substring(0, equalIndex);
       String value = arg.substring(equalIndex + 1);
       switch (key) {
         case "serverPort":
           serverPort = Integer.parseInt(value);
           break;
+        case "listenClip":
         case "listenerClip":
           listenerClip = Integer.parseInt(value) == 1;
           break;
@@ -49,8 +61,12 @@ public final class Options {
         case "startApp":
           startApp = value;
           break;
+        default:
+          log("Unknown key: " + key);
+          break;
       }
     }
+    log("Parsed - serverPort: " + serverPort + ", maxSize: " + maxSize + ", maxFps: " + maxFps);
   }
 }
 

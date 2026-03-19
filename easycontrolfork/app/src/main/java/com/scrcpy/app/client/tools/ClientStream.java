@@ -115,8 +115,12 @@ public class ClientStream {
       + " supportOpus=" + (supportOpus ? 1 : 0)
       + " startApp=" + device.startApp + " \n";
     
-    Logger.d(TAG, "Starting server with command");
+    Logger.d(TAG, "Starting server with command: " + cmd.trim());
     shell.write(ByteBuffer.wrap(cmd.getBytes()));
+    
+    // Wait a bit and check for server output/errors
+    Thread.sleep(100);
+    Logger.i(TAG, "Server command sent, waiting for startup...");
   }
 
   private void connectServer(Device device) throws Exception {
