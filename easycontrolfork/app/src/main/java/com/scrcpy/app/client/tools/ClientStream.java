@@ -118,19 +118,19 @@ public class ClientStream {
       + " supportOpus=" + (supportOpus ? 1 : 0)
       + " startApp=" + device.startApp + "\n";
     
-    Logger.d(TAG, "Starting server with command: " + cmd.trim());
+    Logger.d(TAG, "Starting server (no background): " + cmd.trim());
     shell.write(ByteBuffer.wrap(cmd.getBytes()));
     
-    // Wait for server to start
-    Thread.sleep(2000);
-    Logger.i(TAG, "Server command sent, waiting for startup...");
+    // Wait longer to capture error output
+    Thread.sleep(3000);
+    Logger.i(TAG, "Server command sent, waiting...");
     
-    // Check if server process is running
+    // Check process
     try {
-      String psResult = adb.runAdbCmd("ps -A | grep -E 'app_process|scrcpy' || echo 'No process found'");
-      Logger.d(TAG, "Process check: " + (psResult != null ? psResult.trim() : "no processes"));
+      String psResult = adb.runAdbCmd("ps -A | grep -E 'app_process|scrcpy' || echo 'No process'");
+      Logger.d(TAG, "Process: " + (psResult != null ? psResult.trim() : "none"));
     } catch (Exception e) {
-      Logger.d(TAG, "Could not check process: " + e.getMessage());
+      Logger.e(TAG, "Process check error: " + e.getMessage());
     }
   }
 
