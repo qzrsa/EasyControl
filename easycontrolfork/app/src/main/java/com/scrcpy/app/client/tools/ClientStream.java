@@ -95,14 +95,15 @@ public class ClientStream {
     boolean needPush = true;
     Logger.d(TAG, "Need to push server: " + needPush + " (forced for package migration)");
     
-    if (needPush) {
-      adb.runAdbCmd("rm /data/local/tmp/easycontrolfork_* ");
-      Logger.d(TAG, "Pushing server file: " + serverName);
-      adb.pushFile(AppData.applicationContext.getResources().openRawResource(R.raw.easycontrolfork_server), serverName, null);
-      Logger.i(TAG, "Server file pushed successfully");
-    }
-    
+    // Delete old server file using shell stream (not runAdbCmd to avoid blocking)
     shell = adb.getShell();
+    shell.write(ByteBuffer.wrap("rm -f /data/local/tmp/easycontrolfork_*\n".getBytes()));
+    Thread.sleep(100);
+    
+    // Push new server file
+    Logger.d(TAG, "Pushing server file: " + serverName);
+    adb.pushFile(AppData.applicationContext.getResources().openRawResource(R.raw.easycontrolfork_server), serverName, null);
+    Logger.i(TAG, "Server file pushed successfully");
     
     // Start server in background with output redirection
     String cmd = "/system/bin/app_process -Djava.class.path=" + serverName + " / com.scrcpy.server.Server"
@@ -115,7 +116,7 @@ public class ClientStream {
       + " keepAwake=" + (device.keepWakeOnRunning ? 1 : 0)
       + " supportH265=" + ((device.useH265 && supportH265) ? 1 : 0)
       + " supportOpus=" + (supportOpus ? 1 : 0)
-      + " startApp=" + device.startApp + " > /data/local/tmp/server.log 2>&1 & echo $!\n";
+      + " startApp=" + device.startApp + " > /data/local/tmp/server.log 2>&1 & echo STARTED\n";
     
     Logger.d(TAG, "Starting server with command: " + cmd.trim());
     shell.write(ByteBuffer.wrap(cmd.getBytes()));
@@ -126,8 +127,8 @@ public class ClientStream {
     
     // Check if server process is running
     try {
-      String psResult = adb.runAdbCmd("ps -A | grep app_process");
-      Logger.d(TAG, "Process check: " + (psResult != null ? psResult : "no processes"));
+      String psResult = adb.runAdbCmd("ps -A | grep -E 'app_process|scrcpy' || echo 'No process found'");
+      Logger.d(TAG, "Process check: " + (psResult != null ? psResult.trim() : "no processes"));
     } catch (Exception e) {
       Logger.d(TAG, "Could not check process: " + e.getMessage());
     }
