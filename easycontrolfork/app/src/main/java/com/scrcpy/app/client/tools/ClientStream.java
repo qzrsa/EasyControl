@@ -104,12 +104,7 @@ public class ClientStream {
     
     shell = adb.getShell();
     
-    // Use full path to app_process and check if it exists first
-    String checkCmd = "which app_process || ls /system/bin/app_process64 || ls /system/bin/app_process32 || ls /system/bin/app_process\n";
-    shell.write(ByteBuffer.wrap(checkCmd.getBytes()));
-    Thread.sleep(200);
-    
-    // Use full path based on common Android locations
+    // Start server via runAdbCmd to capture output
     String cmd = "/system/bin/app_process -Djava.class.path=" + serverName + " / com.scrcpy.server.Server"
       + " serverPort=" + device.serverPort
       + " listenClip=" + (device.listenClip ? 1 : 0)
@@ -120,12 +115,19 @@ public class ClientStream {
       + " keepAwake=" + (device.keepWakeOnRunning ? 1 : 0)
       + " supportH265=" + ((device.useH265 && supportH265) ? 1 : 0)
       + " supportOpus=" + (supportOpus ? 1 : 0)
-      + " startApp=" + device.startApp + " \n";
+      + " startApp=" + device.startApp;
     
-    Logger.d(TAG, "Starting server with command: " + cmd.trim());
-    shell.write(ByteBuffer.wrap(cmd.getBytes()));
+    Logger.d(TAG, "Starting server via runAdbCmd: " + cmd);
     
-    // Wait longer for server to initialize
+    // Run server in background, redirect output to log file
+    try {
+      String result = adb.runAdbCmd(cmd + " > /data/local/tmp/server.log 2>&1 &");
+      Logger.d(TAG, "Server start result: " + (result != null ? result : "null"));
+    } catch (Exception e) {
+      Logger.e(TAG, "Error starting server: " + e.getMessage());
+    }
+    
+    // Wait for server to start
     Thread.sleep(1000);
     Logger.i(TAG, "Server command sent, waiting for startup...");
     
