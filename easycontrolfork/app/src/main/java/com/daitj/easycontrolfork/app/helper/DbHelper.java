@@ -14,7 +14,7 @@ import com.daitj.easycontrolfork.app.entity.Device;
 public class DbHelper extends SQLiteOpenHelper {
 
   private static final String dataBaseName = "app.db";
-  private static final int version = 24; // 版本号+1
+  private static final int version = 24;
   private final String tableName = "DevicesDb";
 
   public DbHelper(Context context) {
@@ -24,7 +24,7 @@ public class DbHelper extends SQLiteOpenHelper {
   @Override
   public void onCreate(SQLiteDatabase db) {
     StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append("CREATE TABLE " + tableName + " (");
+    stringBuilder.append("CREATE TABLE ").append(tableName).append(" (");
     stringBuilder.append("uuid text PRIMARY KEY,");
     stringBuilder.append("type integer,");
     stringBuilder.append("name text,");
@@ -61,7 +61,7 @@ public class DbHelper extends SQLiteOpenHelper {
     stringBuilder.append("smallYLan integer,");
     stringBuilder.append("smallLengthLan integer,");
     stringBuilder.append("miniY integer,");
-    // 新增字段
+    // EasyTier 配置（暂复用 relay 字段名）
     stringBuilder.append("connMode integer,");
     stringBuilder.append("useGlobalRelay integer,");
     stringBuilder.append("relayHost text,");
@@ -77,7 +77,10 @@ public class DbHelper extends SQLiteOpenHelper {
       ArrayList<Device> devices = getAll(db);
       db.execSQL("alter table " + tableName + " rename to tempTable");
       onCreate(db);
-      for (Device device : devices) db.insert(tableName, null, getValues(device));
+      for (Device device : devices) {
+        if (device.relayPort <= 0) device.relayPort = 11010;
+        db.insert(tableName, null, getValues(device));
+      }
       db.execSQL("drop table tempTable");
     }
   }
@@ -90,7 +93,11 @@ public class DbHelper extends SQLiteOpenHelper {
   private ArrayList<Device> getAll(SQLiteDatabase db) {
     ArrayList<Device> devices = new ArrayList<>();
     try (Cursor cursor = db.query(tableName, null, null, null, null, null, null)) {
-      if (cursor.moveToFirst()) do devices.add(getDeviceFormCursor(cursor)); while (cursor.moveToNext());
+      if (cursor.moveToFirst()) {
+        do {
+          devices.add(getDeviceFormCursor(cursor));
+        } while (cursor.moveToNext());
+      }
     }
     return devices;
   }
@@ -105,10 +112,12 @@ public class DbHelper extends SQLiteOpenHelper {
   }
 
   public void insert(Device device) {
+    if (device.relayPort <= 0) device.relayPort = 11010;
     getWritableDatabase().insert(tableName, null, getValues(device));
   }
 
   public void update(Device device) {
+    if (device.relayPort <= 0) device.relayPort = 11010;
     getWritableDatabase().update(tableName, getValues(device), "uuid=?", new String[]{device.uuid});
   }
 
@@ -154,18 +163,23 @@ public class DbHelper extends SQLiteOpenHelper {
     values.put("smallYLan", device.smallYLan);
     values.put("smallLengthLan", device.smallLengthLan);
     values.put("miniY", device.miniY);
-    // 新增字段
+
+    // EasyTier 配置（暂复用 relay 字段名）
     values.put("connMode", device.connMode);
     values.put("useGlobalRelay", device.useGlobalRelay ? 1 : 0);
     values.put("relayHost", device.relayHost);
-    values.put("relayPort", device.relayPort);
+    values.put("relayPort", device.relayPort > 0 ? device.relayPort : 11010);
     values.put("relayKey", device.relayKey);
     return values;
   }
 
   @SuppressLint("Range")
   private Device getDeviceFormCursor(Cursor cursor) {
-    Device device = new Device(cursor.getString(cursor.getColumnIndex("uuid")), cursor.getInt(cursor.getColumnIndex("type")));
+    Device device = new Device(
+      cursor.getString(cursor.getColumnIndex("uuid")),
+      cursor.getInt(cursor.getColumnIndex("type"))
+    );
+
     for (int i = 0; i < cursor.getColumnCount(); i++) {
       switch (cursor.getColumnName(i)) {
         case "name": device.name = cursor.getString(i); break;
@@ -202,14 +216,17 @@ public class DbHelper extends SQLiteOpenHelper {
         case "smallYLan": device.smallYLan = cursor.getInt(i); break;
         case "smallLengthLan": device.smallLengthLan = cursor.getInt(i); break;
         case "miniY": device.miniY = cursor.getInt(i); break;
-        // 新增字段
+
+        // EasyTier 配置（暂复用 relay 字段名）
         case "connMode": device.connMode = cursor.getInt(i); break;
         case "useGlobalRelay": device.useGlobalRelay = cursor.getInt(i) == 1; break;
         case "relayHost": device.relayHost = cursor.getString(i); break;
-        case "relayPort": device.relayPort = cursor.getInt(i); break;
+        case "relayPort": device.relayPort = cursor.getInt(i) > 0 ? cursor.getInt(i) : 11010; break;
         case "relayKey": device.relayKey = cursor.getString(i); break;
       }
     }
+
+    if (device.relayPort <= 0) device.relayPort = 11010;
     return device;
   }
 }
