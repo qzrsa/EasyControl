@@ -105,7 +105,7 @@ public class ClientStream {
     adb.pushFile(AppData.applicationContext.getResources().openRawResource(R.raw.easycontrolfork_server), serverName, null);
     Logger.i(TAG, "Server file pushed successfully");
     
-    // Start server in background with output redirection
+    // Start server - try with direct output first (no background) to see errors
     String cmd = "/system/bin/app_process -Djava.class.path=" + serverName + " / com.scrcpy.server.Server"
       + " serverPort=" + device.serverPort
       + " listenClip=" + (device.listenClip ? 1 : 0)
@@ -116,13 +116,13 @@ public class ClientStream {
       + " keepAwake=" + (device.keepWakeOnRunning ? 1 : 0)
       + " supportH265=" + ((device.useH265 && supportH265) ? 1 : 0)
       + " supportOpus=" + (supportOpus ? 1 : 0)
-      + " startApp=" + device.startApp + " > /data/local/tmp/server.log 2>&1 & echo STARTED\n";
+      + " startApp=" + device.startApp + "\n";
     
     Logger.d(TAG, "Starting server with command: " + cmd.trim());
     shell.write(ByteBuffer.wrap(cmd.getBytes()));
     
     // Wait for server to start
-    Thread.sleep(500);
+    Thread.sleep(2000);
     Logger.i(TAG, "Server command sent, waiting for startup...");
     
     // Check if server process is running
