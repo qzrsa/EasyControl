@@ -18,6 +18,11 @@ on:
         required: false
         default: ''
         type: string
+      is_prerelease:
+        description: 'Pre-release (uncheck for stable release)'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   build:
@@ -104,7 +109,7 @@ jobs:
             Build Date: ${{ steps.tag.outputs.release_date }}
             Note: ${{ inputs.note }}
           draft: false
-          prerelease: false
+          prerelease: ${{ inputs.is_prerelease }}
           files: release/EasyControl.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
