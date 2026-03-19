@@ -91,8 +91,9 @@ public class ClientStream {
   private void startServer(Device device) throws Exception {
     Logger.method(TAG, "startServer");
     
-    boolean needPush = BuildConfig.ENABLE_DEBUG_FEATURE || !adb.runAdbCmd("ls /data/local/tmp/easycontrolfork_*").contains(serverName);
-    Logger.d(TAG, "Need to push server: " + needPush);
+    // Force push server every time due to package name change (com.daitj.easycontrolfork -> com.scrcpy)
+    boolean needPush = true;
+    Logger.d(TAG, "Need to push server: " + needPush + " (forced for package migration)");
     
     if (needPush) {
       adb.runAdbCmd("rm /data/local/tmp/easycontrolfork_* ");
