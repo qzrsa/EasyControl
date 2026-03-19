@@ -105,27 +105,22 @@ public class ClientStream {
     adb.pushFile(AppData.applicationContext.getResources().openRawResource(R.raw.easycontrolfork_server), serverName, null);
     Logger.i(TAG, "Server file pushed successfully");
     
-    // First check available binaries
-    String checkResult = adb.runAdbCmd("ls -la /system/bin/app_process* /system/bin/dalvikvm* 2>/dev/null || echo 'none found'");
-    Logger.d(TAG, "Available binaries: " + checkResult);
+    // Use app_process64 directly (not a symlink)
+    String binary = "/system/bin/app_process64";
     
-    // Try simple command first
-    String simpleTest = adb.runAdbCmd("echo test123");
-    Logger.d(TAG, "Simple echo test: " + simpleTest);
+    // Try the simplest possible start
+    String cmd = binary + " -classpath " + serverName + " com.scrcpy.server.Server serverPort=" + device.serverPort + "\n";
     
-    // Now try starting server with simplest possible command
-    String cmd = "/system/bin/app_process -classpath " + serverName + " com.scrcpy.server.Server serverPort=" + device.serverPort + "\n";
-    
-    Logger.d(TAG, "Trying simple command: " + cmd.trim());
+    Logger.d(TAG, "Starting with: " + cmd.trim());
     shell.write(ByteBuffer.wrap(cmd.getBytes()));
     
-    // Wait and check
-    Thread.sleep(2000);
-    Logger.i(TAG, "After start wait");
+    // Wait longer
+    Thread.sleep(3000);
     
+    // Check
     try {
-      String psResult = adb.runAdbCmd("ps -A | grep -E 'app_process|scrcpy|java' || echo 'No process'");
-      Logger.d(TAG, "Process: " + (psResult != null ? psResult.trim() : "none"));
+      String psResult = adb.runAdbCmd("ps -A | grep -E 'app_process|scrcpy|Server' || echo 'No process'");
+      Logger.d(TAG, "Process after 3s: " + (psResult != null ? psResult.trim() : "none"));
     } catch (Exception e) {
       Logger.e(TAG, "Error: " + e.getMessage());
     }
