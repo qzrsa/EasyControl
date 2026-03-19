@@ -105,46 +105,29 @@ public class ClientStream {
     adb.pushFile(AppData.applicationContext.getResources().openRawResource(R.raw.easycontrolfork_server), serverName, null);
     Logger.i(TAG, "Server file pushed successfully");
     
-    // Start server with nohup to capture output - try app_process first, then dalvikvm
-    String binary = "/system/bin/app_process";
-    String testBinary = adb.runAdbCmd("ls " + binary + " 2>/dev/null || ls /system/bin/dalvikvm 2>/dev/null || echo 'not found'");
-    if (testBinary != null && testBinary.contains("not found")) {
-      binary = "/system/bin/dalvikvm";
-    }
-    Logger.d(TAG, "Using binary: " + binary);
+    // First check available binaries
+    String checkResult = adb.runAdbCmd("ls -la /system/bin/app_process* /system/bin/dalvikvm* 2>/dev/null || echo 'none found'");
+    Logger.d(TAG, "Available binaries: " + checkResult);
     
-    String cmd = "nohup " + binary + " -classpath " + serverName + " com.scrcpy.server.Server"
-      + " serverPort=" + device.serverPort
-      + " listenClip=" + (device.listenClip ? 1 : 0)
-      + " isAudio=" + (device.isAudio ? 1 : 0)
-      + " maxSize=" + device.maxSize
-      + " maxFps=" + device.maxFps
-      + " maxVideoBit=" + device.maxVideoBit
-      + " keepAwake=" + (device.keepWakeOnRunning ? 1 : 0)
-      + " supportH265=" + ((device.useH265 && supportH265) ? 1 : 0)
-      + " supportOpus=" + (supportOpus ? 1 : 0)
-      + " startApp=" + device.startApp
-      + " > /data/local/tmp/scrcpy.log 2>&1 &\n";
+    // Try simple command first
+    String simpleTest = adb.runAdbCmd("echo test123");
+    Logger.d(TAG, "Simple echo test: " + simpleTest);
     
-    Logger.d(TAG, "Starting with nohup: " + cmd.trim());
+    // Now try starting server with simplest possible command
+    String cmd = "/system/bin/app_process -classpath " + serverName + " com.scrcpy.server.Server serverPort=" + device.serverPort + "\n";
+    
+    Logger.d(TAG, "Trying simple command: " + cmd.trim());
     shell.write(ByteBuffer.wrap(cmd.getBytes()));
     
-    // Wait for server to start
-    Thread.sleep(1000);
-    Logger.i(TAG, "Server started, checking...");
+    // Wait and check
+    Thread.sleep(2000);
+    Logger.i(TAG, "After start wait");
     
-    // Check process
     try {
-      String psResult = adb.runAdbCmd("ps -A | grep -E 'app_process|scrcpy' || echo 'No process'");
+      String psResult = adb.runAdbCmd("ps -A | grep -E 'app_process|scrcpy|java' || echo 'No process'");
       Logger.d(TAG, "Process: " + (psResult != null ? psResult.trim() : "none"));
-      
-      // Read server log
-      String logResult = adb.runAdbCmd("cat /data/local/tmp/scrcpy.log 2>/dev/null || echo 'No log'");
-      if (logResult != null && !logResult.contains("No log")) {
-        Logger.e(TAG, "Server log: " + logResult.trim());
-      }
     } catch (Exception e) {
-      Logger.e(TAG, "Check error: " + e.getMessage());
+      Logger.e(TAG, "Error: " + e.getMessage());
     }
   }
 
