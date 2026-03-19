@@ -1,4 +1,4 @@
-package com.scrcpy.app.client.tools;
+﻿package com.scrcpy.app.client.tools;
 
 import static android.content.ClipDescription.MIMETYPE_TEXT_PLAIN;
 

@@ -1,4 +1,4 @@
-package com.scrcpy.app.buffer;
+﻿package com.scrcpy.app.buffer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

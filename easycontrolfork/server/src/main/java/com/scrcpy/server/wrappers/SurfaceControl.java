@@ -1,5 +1,4 @@
-
-package com.scrcpy.server.wrappers;
+﻿package com.scrcpy.server.wrappers;
 
 import android.annotation.SuppressLint;
 import android.graphics.Rect;

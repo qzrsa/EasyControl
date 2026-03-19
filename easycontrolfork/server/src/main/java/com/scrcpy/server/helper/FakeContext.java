@@ -1,5 +1,4 @@
-
-package com.scrcpy.server.helper;
+﻿package com.scrcpy.server.helper;
 
 import android.annotation.TargetApi;
 import android.content.AttributionSource;

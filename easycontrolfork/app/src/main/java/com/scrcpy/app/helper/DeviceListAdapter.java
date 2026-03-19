@@ -1,4 +1,4 @@
-package com.scrcpy.app.helper;
+﻿package com.scrcpy.app.helper;
 
 import android.app.Activity;
 import android.app.Dialog;

@@ -1,4 +1,4 @@
-package com.scrcpy.app.client.decode;
+﻿package com.scrcpy.app.client.decode;
 
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;

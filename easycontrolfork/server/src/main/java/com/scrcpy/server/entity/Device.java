@@ -1,5 +1,4 @@
-
-package com.scrcpy.server.entity;
+﻿package com.scrcpy.server.entity;
 
 import android.content.IOnPrimaryClipChangedListener;
 import android.hardware.display.VirtualDisplay;

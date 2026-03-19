@@ -1,4 +1,4 @@
-package com.scrcpy.app;
+﻿package com.scrcpy.app;
 
 import android.app.Activity;
 import android.os.Bundle;

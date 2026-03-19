@@ -1,5 +1,4 @@
-
-package com.scrcpy.server.helper;
+﻿package com.scrcpy.server.helper;
 
 import android.graphics.Rect;
 import android.media.MediaCodec;

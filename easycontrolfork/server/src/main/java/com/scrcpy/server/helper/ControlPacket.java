@@ -1,5 +1,4 @@
-
-package com.scrcpy.server.helper;
+﻿package com.scrcpy.server.helper;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

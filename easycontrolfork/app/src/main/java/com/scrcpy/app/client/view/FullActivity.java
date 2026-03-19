@@ -1,4 +1,4 @@
-package com.scrcpy.app.client.view;
+﻿package com.scrcpy.app.client.view;
 
 import android.app.Activity;
 import android.content.pm.ActivityInfo;

@@ -1,4 +1,4 @@
-package com.scrcpy.app.adb;
+﻿package com.scrcpy.app.adb;
 
 import java.io.File;
 import java.io.FileInputStream;

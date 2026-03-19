@@ -1,5 +1,4 @@
-
-package com.scrcpy.server.wrappers;
+﻿package com.scrcpy.server.wrappers;
 
 import android.os.IInterface;
 import android.view.Display;

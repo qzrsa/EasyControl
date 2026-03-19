@@ -1,4 +1,4 @@
-package com.scrcpy.app.entity;
+﻿package com.scrcpy.app.entity;
 
 import java.util.Objects;
 
