@@ -1,4 +1,4 @@
-﻿package com.scrcpy.app.helper;
+package com.scrcpy.app.helper;
 
 import android.content.Context;
 import android.content.Intent;

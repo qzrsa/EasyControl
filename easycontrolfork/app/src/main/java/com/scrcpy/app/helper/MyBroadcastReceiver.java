@@ -1,4 +1,4 @@
-﻿package com.scrcpy.app.helper;
+package com.scrcpy.app.helper;
 
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;

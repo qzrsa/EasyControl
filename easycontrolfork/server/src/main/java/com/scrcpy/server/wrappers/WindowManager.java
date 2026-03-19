@@ -1,4 +1,4 @@
-﻿
+
 package com.scrcpy.server.wrappers;
 
 import android.os.IInterface;

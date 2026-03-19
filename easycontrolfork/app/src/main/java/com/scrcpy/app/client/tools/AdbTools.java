@@ -1,4 +1,4 @@
-﻿package com.scrcpy.app.client.tools;
+package com.scrcpy.app.client.tools;
 
 import android.hardware.usb.UsbDevice;
 

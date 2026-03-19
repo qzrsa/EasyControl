@@ -1,4 +1,4 @@
-﻿
+
 package com.scrcpy.app.adb;
 
 import android.hardware.usb.UsbConstants;

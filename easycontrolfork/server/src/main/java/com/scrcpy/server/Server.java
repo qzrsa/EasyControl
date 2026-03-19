@@ -1,4 +1,4 @@
-﻿
+
 package com.scrcpy.server;
 
 import android.annotation.SuppressLint;

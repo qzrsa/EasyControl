@@ -1,4 +1,4 @@
-﻿
+
 package com.scrcpy.server.entity;
 
 import android.util.Pair;

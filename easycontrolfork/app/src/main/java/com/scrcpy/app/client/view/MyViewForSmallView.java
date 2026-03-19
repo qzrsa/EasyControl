@@ -1,4 +1,4 @@
-﻿package com.scrcpy.app.client.view;
+package com.scrcpy.app.client.view;
 
 import android.content.Context;
 import android.util.AttributeSet;

@@ -1,4 +1,4 @@
-﻿
+
 package com.scrcpy.server.helper;
 
 import android.annotation.TargetApi;

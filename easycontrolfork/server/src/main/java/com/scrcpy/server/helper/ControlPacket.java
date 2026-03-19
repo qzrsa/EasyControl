@@ -1,4 +1,4 @@
-﻿
+
 package com.scrcpy.server.helper;
 
 import java.io.IOException;

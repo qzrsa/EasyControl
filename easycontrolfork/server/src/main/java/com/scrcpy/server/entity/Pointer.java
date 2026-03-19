@@ -1,4 +1,4 @@
-﻿
+
 package com.scrcpy.server.entity;
 
 public final class Pointer {

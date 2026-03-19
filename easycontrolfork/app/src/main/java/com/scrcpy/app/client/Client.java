@@ -1,4 +1,4 @@
-﻿package com.scrcpy.app.client;
+package com.scrcpy.app.client;
 
 import android.app.Dialog;
 import android.util.Pair;
