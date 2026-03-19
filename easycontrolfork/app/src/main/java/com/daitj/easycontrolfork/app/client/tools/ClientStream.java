@@ -377,7 +377,12 @@ public class ClientStream {
       throw new Exception(AppData.applicationContext.getString(R.string.error_easytier_host_empty));
     }
 
-    addDebugLog("【EasyTier】开始启动 VPN 服务 host=" + relayHost + " port=" + relayPort);
+    String easyTierHost = relayHost;
+    if (!easyTierHost.contains("://")) {
+      easyTierHost = "tcp://" + relayHost + ":" + relayPort;
+    }
+
+    addDebugLog("【EasyTier】开始启动 VPN 服务 host=" + easyTierHost);
 
     Intent vpnIntent = VpnService.prepare(AppData.applicationContext);
     if (vpnIntent != null) {
@@ -390,8 +395,8 @@ public class ClientStream {
 
     EasyTierManager.start(
       AppData.applicationContext,
-      relayHost,
-      relayPort,
+      easyTierHost,
+      "default",
       relayKey,
       new EasyTierManager.VirtualIpCallback() {
         @Override
