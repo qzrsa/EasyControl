@@ -9,8 +9,6 @@ import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import androidx.core.app.NotificationCompat;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -19,18 +17,6 @@ import java.util.List;
 
 import com.daitj.easycontrolfork.app.R;
 
-/**
- * EasyTierVpnService
- *
- * 职责：
- * 1. 建立 Android TUN 虚拟网卡（通过 VpnService.Builder）
- * 2. 拉起 easytier-core 进程，传入 TUN fd 和连接参数
- * 3. 解析进程输出，获取分配的虚拟 IP 后回调
- * 4. 维持前台服务保活
- *
- * easytier-core 启动参数说明（no-tun 模式暂不支持，这里走标准 tun 模式）：
- *   easytier-core -p <peer> --network-name <key> --ipv4 dhcp --tun-fd <fd>
- */
 public class EasyTierVpnService extends VpnService {
 
   private static final String TAG = "EasyTierVpnService";
@@ -71,29 +57,27 @@ public class EasyTierVpnService extends VpnService {
 
   private void startEasyTier(String host, int port, String key) {
     try {
-      // 1. 准备二进制
       File binary = EasyTierManager.prepareBinary(this);
       Log.d(TAG, "binary 就绪: " + binary.getAbsolutePath());
 
-      // 2. 建立 TUN 设备
       VpnService.Builder builder = new VpnService.Builder();
-      builder.setMtu(1500);
-      // 先给一个临时地址，easytier-core 会通过 DHCP 动态分配实际地址
-      // 这里占位用 10.0.0.1/24，实际运行后 easytier 会修改路由
-      builder.addAddress("10.26.0.1", 24);
-      builder.addRoute("10.26.0.0", 24);
-      builder.addDnsServer("8.8.8.8");
       builder.setSession("EasyTier");
-      builder.setBlocking(true);
-      tunFd = builder.establish();
+      builder.setMtu(1500);
+      builder.addAddress("10.26.0.1", 24);
+      builder.addRoute("0.0.0.0", 0);
+      builder.addDnsServer("8.8.8.8");
 
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        builder.setMetered(false);
+      }
+
+      tunFd = builder.establish();
       if (tunFd == null) {
         throw new Exception("TUN 设备创建失败，请确认已授予 VPN 权限");
       }
+
       Log.d(TAG, "TUN fd = " + tunFd.getFd());
 
-      // 3. 构建 easytier-core 启动命令
-      // --tun-fd 参数让 easytier-core 直接使用我们建好的 TUN fd
       List<String> cmd = new ArrayList<>();
       cmd.add(binary.getAbsolutePath());
       cmd.add("--peer");
@@ -101,12 +85,12 @@ public class EasyTierVpnService extends VpnService {
       cmd.add("--network-name");
       cmd.add(key != null && !key.isEmpty() ? key : "default");
       cmd.add("--network-secret");
-      cmd.add(key != null && !key.isEmpty() ? key : "");
+      cmd.add(key != null ? key : "");
       cmd.add("--ipv4");
       cmd.add("dhcp");
       cmd.add("--tun-fd");
       cmd.add(String.valueOf(tunFd.getFd()));
-      cmd.add("--no-listener"); // 不监听端口，只作为客户端加入网络
+      cmd.add("--no-listener");
       cmd.add("--log-level");
       cmd.add("info");
 
@@ -116,12 +100,9 @@ public class EasyTierVpnService extends VpnService {
       pb.redirectErrorStream(true);
       pb.environment().put("RUST_LOG", "info");
 
-      protect(tunFd.getFd()); // 防止 VPN 流量回环
-
       easyTierProcess = pb.start();
 
-      // 4. 监听输出，等待虚拟 IP 分配
-      monitorThread = new Thread(() -> monitorOutput());
+      monitorThread = new Thread(this::monitorOutput);
       monitorThread.start();
 
     } catch (Exception e) {
@@ -131,45 +112,42 @@ public class EasyTierVpnService extends VpnService {
     }
   }
 
-  /**
-   * 监听 easytier-core 的标准输出，解析虚拟 IP。
-   * easytier-core 在成功加入网络后会打印类似：
-   *   [INFO] ... assigned virtual ip: 10.26.0.x
-   */
   private void monitorOutput() {
     try (BufferedReader reader = new BufferedReader(
       new InputStreamReader(easyTierProcess.getInputStream()))) {
       String line;
       while ((line = reader.readLine()) != null) {
         Log.d(TAG, "[easytier] " + line);
-        // 解析虚拟 IP
         String vip = parseVirtualIp(line);
         if (vip != null && sCallback != null) {
           Log.d(TAG, "虚拟 IP 已分配: " + vip);
           sCallback.onVirtualIpReady(vip);
-          sCallback = null; // 只回调一次
+          sCallback = null;
         }
       }
     } catch (Exception e) {
-      Log.e(TAG, "监听输出失败: " + e.getMessage());
+      Log.e(TAG, "监听输出失败: " + e.getMessage(), e);
     }
 
     Log.d(TAG, "easytier-core 进程已退出");
     stopSelf();
   }
 
-  /**
-   * 从 easytier-core 日志行中解析虚拟 IP。
-   * 匹配形如 "assigned virtual ip: 10.26.x.x" 或 "my_ipv4: 10.26.x.x" 的行。
-   */
   private String parseVirtualIp(String line) {
+    if (line == null) return null;
+
     String lower = line.toLowerCase();
-    // 常见关键词：assigned, my_ipv4, virtual ip
-    for (String kw : new String[]{"assigned virtual ip:", "my_ipv4:", "virtual_ip:", "ipv4 addr:"}) {
+    String[] keywords = new String[]{
+      "assigned virtual ip:",
+      "my_ipv4:",
+      "virtual_ip:",
+      "ipv4 addr:"
+    };
+
+    for (String kw : keywords) {
       int idx = lower.indexOf(kw);
       if (idx >= 0) {
         String rest = line.substring(idx + kw.length()).trim();
-        // 取第一个 token（IP 地址部分）
         String[] parts = rest.split("[\\s/,]");
         if (parts.length > 0 && parts[0].matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
           return parts[0];
@@ -184,7 +162,10 @@ public class EasyTierVpnService extends VpnService {
     super.onDestroy();
     Log.d(TAG, "EasyTierVpnService 销毁");
 
-    if (monitorThread != null) monitorThread.interrupt();
+    if (monitorThread != null) {
+      monitorThread.interrupt();
+      monitorThread = null;
+    }
 
     if (easyTierProcess != null) {
       easyTierProcess.destroy();
@@ -199,23 +180,37 @@ public class EasyTierVpnService extends VpnService {
     } catch (Exception e) {
       Log.e(TAG, "关闭 TUN fd 失败", e);
     }
-
-    EasyTierManager.stop(this);
   }
 
   private Notification buildNotification() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       NotificationChannel channel = new NotificationChannel(
-        CHANNEL_ID, "EasyTier VPN", NotificationManager.IMPORTANCE_LOW
+        CHANNEL_ID,
+        "EasyTier VPN",
+        NotificationManager.IMPORTANCE_LOW
       );
+      channel.setDescription("EasyTier 虚拟组网前台服务");
+
       NotificationManager nm = getSystemService(NotificationManager.class);
-      if (nm != null) nm.createNotificationChannel(channel);
+      if (nm != null) {
+        nm.createNotificationChannel(channel);
+      }
     }
-    return new NotificationCompat.Builder(this, CHANNEL_ID)
+
+    Notification.Builder builder;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      builder = new Notification.Builder(this, CHANNEL_ID);
+    } else {
+      builder = new Notification.Builder(this);
+      builder.setPriority(Notification.PRIORITY_LOW);
+    }
+
+    builder
       .setContentTitle("EasyTier 虚拟组网")
       .setContentText("正在连接虚拟网络...")
-      .setSmallIcon(R.drawable.chevron_left) // 先用现有图标占位
-      .setPriority(NotificationCompat.PRIORITY_LOW)
-      .build();
+      .setSmallIcon(R.drawable.chevron_left)
+      .setOngoing(true);
+
+    return builder.build();
   }
 }
