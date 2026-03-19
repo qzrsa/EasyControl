@@ -11,6 +11,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -113,88 +115,120 @@ public class DeviceDetailActivity extends Activity {
    * 添加连接模式设置
    */
   private ViewGroup relaySettingsLayout;
+  private EditText relayServerInput;
+  private EditText relayPortInput;
+  private EditText relayTokenInput;
   
   private void addConnectModeSettings() {
-    // 创建连接模式选择卡片
-    View modeCard = createConnectModeCard();
-    activityDeviceDetailBinding.layoutOptionSub.addView(modeCard, 0);
-  }
-  
-  /**
-   * 创建连接模式选择卡片
-   */
-  private View createConnectModeCard() {
-    // 创建容器
-    ViewGroup container = (ViewGroup) getLayoutInflater().inflate(R.layout.item_connect_mode, null);
+    // 创建连接模式选择卡片 - 使用代码创建而非布局文件
+    LinearLayout container = new LinearLayout(this);
+    container.setOrientation(LinearLayout.VERTICAL);
+    container.setPadding(48, 48, 48, 48);
     
     // 标题
-    TextView titleView = container.findViewById(R.id.text_title);
-    if (titleView != null) {
-      titleView.setText("连接模式");
-    }
+    TextView titleView = new TextView(this);
+    titleView.setText("连接模式");
+    titleView.setTextSize(16);
+    titleView.setTypeface(null, android.graphics.Typeface.BOLD);
+    container.addView(titleView);
     
     // 说明
-    TextView detailView = container.findViewById(R.id.text_detail);
-    if (detailView != null) {
-      detailView.setText("选择设备连接方式");
-    }
+    TextView detailView = new TextView(this);
+    detailView.setText("选择设备连接方式");
+    detailView.setTextSize(12);
+    detailView.setTextColor(0xFF888888);
+    detailView.setPadding(0, 16, 0, 0);
+    container.addView(detailView);
     
     // RadioGroup
-    RadioGroup radioGroup = container.findViewById(R.id.radio_group_connect_mode);
-    if (radioGroup != null) {
-      // 添加各个模式选项
-      String[] modeNames = Device.CONNECT_MODE_NAMES;
-      String[] modeDescriptions = {
-        "通过ADB协议连接，支持USB和网络ADB（默认）",
-        "直接TCP连接到设备Server端口",
-        "通过中继服务器打洞建立直连",
-        "所有流量通过中继服务器转发"
-      };
+    RadioGroup radioGroup = new RadioGroup(this);
+    radioGroup.setOrientation(RadioGroup.VERTICAL);
+    radioGroup.setPadding(0, 48, 0, 0);
+    
+    String[] modeNames = Device.CONNECT_MODE_NAMES;
+    String[] modeDescriptions = {
+      "通过ADB协议连接（默认）",
+      "直接TCP连接到设备",
+      "通过中继服务器打洞",
+      "流量通过中继服务器转发"
+    };
+    
+    for (int i = 0; i < modeNames.length; i++) {
+      RadioButton rb = new RadioButton(this);
+      rb.setText(modeNames[i] + " - " + modeDescriptions[i]);
+      rb.setId(View.generateViewId());
+      rb.setTag(i);
+      radioGroup.addView(rb);
       
-      for (int i = 0; i < modeNames.length; i++) {
-        RadioButton rb = new RadioButton(this);
-        rb.setText(modeNames[i] + " - " + modeDescriptions[i]);
-        rb.setId(View.generateViewId());
-        rb.setTag(i);
-        radioGroup.addView(rb);
-        
-        if (i == device.connectMode) {
-          rb.setChecked(true);
-        }
+      if (i == device.connectMode) {
+        rb.setChecked(true);
       }
-      
-      radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-        RadioButton rb = group.findViewById(checkedId);
-        if (rb != null && rb.getTag() != null) {
-          device.connectMode = (int) rb.getTag();
-          updateRelaySettingsVisibility();
-        }
-      });
     }
+    
+    radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+      RadioButton rb = group.findViewById(checkedId);
+      if (rb != null && rb.getTag() != null) {
+        device.connectMode = (int) rb.getTag();
+        updateRelaySettingsVisibility();
+      }
+    });
+    
+    container.addView(radioGroup);
     
     // 中继设置区域
-    relaySettingsLayout = container.findViewById(R.id.layout_relay_settings);
+    relaySettingsLayout = new LinearLayout(this);
+    relaySettingsLayout.setOrientation(LinearLayout.VERTICAL);
+    relaySettingsLayout.setPadding(48, 48, 48, 48);
+    relaySettingsLayout.setBackgroundColor(0x1A000000);
+    
+    TextView relayTitle = new TextView(this);
+    relayTitle.setText("中继服务器设置");
+    relayTitle.setTextSize(14);
+    relayTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+    relaySettingsLayout.addView(relayTitle);
+    
+    // 服务器地址
+    TextView serverLabel = new TextView(this);
+    serverLabel.setText("服务器地址");
+    serverLabel.setTextSize(12);
+    serverLabel.setPadding(0, 32, 0, 0);
+    relaySettingsLayout.addView(serverLabel);
+    
+    relayServerInput = new EditText(this);
+    relayServerInput.setText(device.relayServer);
+    relayServerInput.setHint("例如: relay.example.com");
+    relaySettingsLayout.addView(relayServerInput);
+    
+    // 端口
+    TextView portLabel = new TextView(this);
+    portLabel.setText("服务器端口");
+    portLabel.setTextSize(12);
+    portLabel.setPadding(0, 32, 0, 0);
+    relaySettingsLayout.addView(portLabel);
+    
+    relayPortInput = new EditText(this);
+    relayPortInput.setText(String.valueOf(device.relayPort));
+    relayPortInput.setHint("默认: 25167");
+    relayPortInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+    relaySettingsLayout.addView(relayPortInput);
+    
+    // 令牌
+    TextView tokenLabel = new TextView(this);
+    tokenLabel.setText("连接令牌（设备标识）");
+    tokenLabel.setTextSize(12);
+    tokenLabel.setPadding(0, 32, 0, 0);
+    relaySettingsLayout.addView(tokenLabel);
+    
+    relayTokenInput = new EditText(this);
+    relayTokenInput.setText(device.relayToken);
+    relayTokenInput.setHint("用于P2P/中转连接");
+    relaySettingsLayout.addView(relayTokenInput);
+    
+    container.addView(relaySettingsLayout);
+    
     updateRelaySettingsVisibility();
     
-    // 中继服务器地址
-    TextView relayServerInput = container.findViewById(R.id.input_relay_server);
-    if (relayServerInput != null) {
-      relayServerInput.setText(device.relayServer);
-    }
-    
-    // 中继端口
-    TextView relayPortInput = container.findViewById(R.id.input_relay_port);
-    if (relayPortInput != null) {
-      relayPortInput.setText(String.valueOf(device.relayPort));
-    }
-    
-    // 连接令牌
-    TextView relayTokenInput = container.findViewById(R.id.input_relay_token);
-    if (relayTokenInput != null) {
-      relayTokenInput.setText(device.relayToken);
-    }
-    
-    return container;
+    activityDeviceDetailBinding.layoutOptionSub.addView(container, 0);
   }
   
   /**
@@ -227,10 +261,6 @@ public class DeviceDetailActivity extends Activity {
       
       // 读取中继设置
       if (relaySettingsLayout != null && relaySettingsLayout.getVisibility() == View.VISIBLE) {
-        TextView relayServerInput = relaySettingsLayout.findViewById(R.id.input_relay_server);
-        TextView relayPortInput = relaySettingsLayout.findViewById(R.id.input_relay_port);
-        TextView relayTokenInput = relaySettingsLayout.findViewById(R.id.input_relay_token);
-        
         if (relayServerInput != null) {
           device.relayServer = String.valueOf(relayServerInput.getText());
         }
