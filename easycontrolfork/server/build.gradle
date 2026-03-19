@@ -3,13 +3,13 @@ plugins {
 }
 
 android {
-  namespace 'com.daitj.easycontrolfork.server'
+  namespace 'com.scrcpy.server'
   compileSdk 36
 
   defaultConfig {
     minSdk 21
     targetSdk 36
-    applicationId 'com.daitj.easycontrolfork.server'
+    applicationId 'com.scrcpy.server'
     versionCode 30304
     versionName '3.3.4'
   }
