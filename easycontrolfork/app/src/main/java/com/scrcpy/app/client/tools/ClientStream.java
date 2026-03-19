@@ -105,8 +105,8 @@ public class ClientStream {
     adb.pushFile(AppData.applicationContext.getResources().openRawResource(R.raw.easycontrolfork_server), serverName, null);
     Logger.i(TAG, "Server file pushed successfully");
     
-    // Start server - try with direct output first (no background) to see errors
-    String cmd = "/system/bin/app_process -Djava.class.path=" + serverName + " / com.scrcpy.server.Server"
+    // Start server with nohup to capture output
+    String cmd = "nohup /system/bin/app_process -Djava.class.path=" + serverName + " / com.scrcpy.server.Server"
       + " serverPort=" + device.serverPort
       + " listenClip=" + (device.listenClip ? 1 : 0)
       + " isAudio=" + (device.isAudio ? 1 : 0)
@@ -116,21 +116,28 @@ public class ClientStream {
       + " keepAwake=" + (device.keepWakeOnRunning ? 1 : 0)
       + " supportH265=" + ((device.useH265 && supportH265) ? 1 : 0)
       + " supportOpus=" + (supportOpus ? 1 : 0)
-      + " startApp=" + device.startApp + "\n";
+      + " startApp=" + device.startApp
+      + " > /data/local/tmp/scrcpy.log 2>&1 &\n";
     
-    Logger.d(TAG, "Starting server (no background): " + cmd.trim());
+    Logger.d(TAG, "Starting with nohup: " + cmd.trim());
     shell.write(ByteBuffer.wrap(cmd.getBytes()));
     
-    // Wait longer to capture error output
-    Thread.sleep(3000);
-    Logger.i(TAG, "Server command sent, waiting...");
+    // Wait for server to start
+    Thread.sleep(1000);
+    Logger.i(TAG, "Server started, checking...");
     
     // Check process
     try {
       String psResult = adb.runAdbCmd("ps -A | grep -E 'app_process|scrcpy' || echo 'No process'");
       Logger.d(TAG, "Process: " + (psResult != null ? psResult.trim() : "none"));
+      
+      // Read server log
+      String logResult = adb.runAdbCmd("cat /data/local/tmp/scrcpy.log 2>/dev/null || echo 'No log'");
+      if (logResult != null && !logResult.contains("No log")) {
+        Logger.e(TAG, "Server log: " + logResult.trim());
+      }
     } catch (Exception e) {
-      Logger.e(TAG, "Process check error: " + e.getMessage());
+      Logger.e(TAG, "Check error: " + e.getMessage());
     }
   }
 
