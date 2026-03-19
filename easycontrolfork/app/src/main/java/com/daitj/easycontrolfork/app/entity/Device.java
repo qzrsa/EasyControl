@@ -7,9 +7,9 @@ public class Device {
   public static final int TYPE_LINK = 2;
 
   // 连接模式
-  public static final int CONN_DIRECT = 0; // 直接连接（默认）
-  public static final int CONN_AUTO   = 1; // 先直连，失败后走服务器
-  public static final int CONN_RELAY  = 2; // 强制服务器中转
+  public static final int CONN_DIRECT = 0;   // 直接连接（默认）
+  public static final int CONN_AUTO = 1;     // 先直连，失败后走 EasyTier 虚拟组网
+  public static final int CONN_RELAY = 2;    // 强制 EasyTier 虚拟组网（保留常量名，避免全项目大量改名）
 
   public final String uuid;
   public final int type;
@@ -48,11 +48,11 @@ public class Device {
   public int smallLengthLan = 800;
   public int miniY = 200;
 
-  // 连接模式与服务器配置
+  // EasyTier 配置（先沿用原字段名，后面再整体重构）
   public int connMode = CONN_DIRECT;
-  public boolean useGlobalRelay = true; // 是否使用全局默认服务器配置
+  public boolean useGlobalRelay = true; // 是否使用全局默认虚拟组网配置
   public String relayHost = "";
-  public int relayPort = 25167;
+  public int relayPort = 11010;
   public String relayKey = "";
 
   public Device(String uuid, int type) {
@@ -109,7 +109,7 @@ public class Device {
     newDevice.smallYLan = smallYLan;
     newDevice.smallLengthLan = smallLengthLan;
     newDevice.miniY = miniY;
-    // 连接模式与服务器配置
+
     newDevice.connMode = connMode;
     newDevice.useGlobalRelay = useGlobalRelay;
     newDevice.relayHost = relayHost;
