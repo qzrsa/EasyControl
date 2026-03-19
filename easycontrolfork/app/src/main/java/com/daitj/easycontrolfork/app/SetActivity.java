@@ -3,7 +3,9 @@ package com.daitj.easycontrolfork.app;
 import android.app.Activity;
 import android.os.Bundle;
 import android.text.InputType;
+import android.view.Gravity;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -29,13 +31,12 @@ public class SetActivity extends Activity {
     setContentView(activitySetBinding.getRoot());
 
     drawUI();
-    setListener();
   }
 
   private void drawUI() {
     activitySetBinding.backButton.setOnClickListener(v -> finish());
 
-    LinearLayout root = activitySetBinding.setLayout;
+    LinearLayout root = activitySetBinding.setOther;
     root.removeAllViews();
 
     ArrayAdapter<String> connModeAdapter = new ArrayAdapter<>(
@@ -85,35 +86,49 @@ public class SetActivity extends Activity {
     editEasyTierKey.setPadding(32, 24, 32, 24);
     root.addView(editEasyTierKey);
 
-    root.addView(ViewTools.createTextCard(
+    Button saveButton = new Button(this);
+    saveButton.setText(getString(R.string.toast_setting_saved));
+    saveButton.setPadding(32, 24, 32, 24);
+    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+      LinearLayout.LayoutParams.MATCH_PARENT,
+      LinearLayout.LayoutParams.WRAP_CONTENT
+    );
+    params.setMargins(0, 24, 0, 0);
+    saveButton.setLayoutParams(params);
+    saveButton.setGravity(Gravity.CENTER);
+    saveButton.setOnClickListener(v -> saveSettings());
+    root.addView(saveButton);
+
+    LinearLayout aboutRoot = activitySetBinding.setAbout;
+    aboutRoot.removeAllViews();
+    aboutRoot.addView(ViewTools.createTextCard(
       this,
-      getString(R.string.set_easytier_note)
+      getString(R.string.set_easytier_note),
+      null
     ).getRoot());
   }
 
-  private void setListener() {
-    activitySetBinding.ok.setOnClickListener(v -> {
-      String host = editEasyTierHost.getText().toString().trim();
-      String portText = editEasyTierPort.getText().toString().trim();
-      String key = editEasyTierKey.getText().toString().trim();
+  private void saveSettings() {
+    String host = editEasyTierHost.getText().toString().trim();
+    String portText = editEasyTierPort.getText().toString().trim();
+    String key = editEasyTierKey.getText().toString().trim();
 
-      int port = 11010;
-      if (!portText.isEmpty()) {
-        try {
-          port = Integer.parseInt(portText);
-        } catch (Exception e) {
-          Toast.makeText(this, getString(R.string.toast_invalid_port_fallback), Toast.LENGTH_SHORT).show();
-          port = 11010;
-        }
+    int port = 11010;
+    if (!portText.isEmpty()) {
+      try {
+        port = Integer.parseInt(portText);
+      } catch (Exception e) {
+        Toast.makeText(this, getString(R.string.toast_invalid_port_fallback), Toast.LENGTH_SHORT).show();
+        port = 11010;
       }
+    }
 
-      AppData.setting.setDefaultRelayHost(host);
-      AppData.setting.setDefaultRelayPort(port);
-      AppData.setting.setDefaultRelayKey(key);
+    AppData.setting.setDefaultRelayHost(host);
+    AppData.setting.setDefaultRelayPort(port);
+    AppData.setting.setDefaultRelayKey(key);
 
-      Toast.makeText(this, getString(R.string.toast_setting_saved), Toast.LENGTH_SHORT).show();
-      finish();
-    });
+    Toast.makeText(this, getString(R.string.toast_setting_saved), Toast.LENGTH_SHORT).show();
+    finish();
   }
 
   private String getConnModeLabel(int mode) {
