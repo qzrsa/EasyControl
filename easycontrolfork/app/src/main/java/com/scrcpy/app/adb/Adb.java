@@ -10,8 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.scrcpy.app.buffer.BufferStream;
 import com.scrcpy.app.entity.MyInterface;
+import com.scrcpy.app.helper.Logger;
 
 public class Adb {
+  private static final String TAG = "Adb";
+  
   private boolean isClosed = false;
   private final AdbChannel channel;
   private int localIdPool = 1;
@@ -22,39 +25,61 @@ public class Adb {
   private final Thread handleInThread = new Thread(this::handleIn);
 
   public Adb(String address,int port, AdbKeyPair keyPair) throws Exception {
+    Logger.method(TAG, "Adb(String address, int port)");
+    Logger.d(TAG, "Connecting to " + address + ":" + port);
     channel = new TcpChannel(address, port);
     connect(keyPair);
   }
 
   public Adb(UsbDevice usbDevice, AdbKeyPair keyPair) throws Exception {
-    if (usbDevice == null) throw new IOException("no usb connect");
+    Logger.method(TAG, "Adb(UsbDevice)");
+    if (usbDevice == null) {
+      Logger.e(TAG, "USB device is null");
+      throw new IOException("no usb connect");
+    }
     channel = new UsbChannel(usbDevice);
     connect(keyPair);
   }
 
   private void connect(AdbKeyPair keyPair) throws Exception {
-
+    Logger.method(TAG, "connect");
+    
+    Logger.d(TAG, "Sending ADB connect message");
     channel.write(AdbProtocol.generateConnect());
     AdbProtocol.AdbMessage message = AdbProtocol.AdbMessage.parseAdbMessage(channel);
+    Logger.d(TAG, "Received message command: 0x" + Integer.toHexString(message.command));
+    
     if (message.command == AdbProtocol.CMD_AUTH) {
+      Logger.d(TAG, "Authentication required, sending signature");
       channel.write(AdbProtocol.generateAuth(AdbProtocol.AUTH_TYPE_SIGNATURE, keyPair.signPayload(message.payload)));
       message = AdbProtocol.AdbMessage.parseAdbMessage(channel);
+      Logger.d(TAG, "Auth response command: 0x" + Integer.toHexString(message.command));
+      
       if (message.command == AdbProtocol.CMD_AUTH) {
+        Logger.d(TAG, "Signature rejected, sending RSA public key");
         channel.write(AdbProtocol.generateAuth(AdbProtocol.AUTH_TYPE_RSA_PUBLIC, keyPair.publicKeyBytes));
         message = AdbProtocol.AdbMessage.parseAdbMessage(channel);
+        Logger.d(TAG, "RSA auth response command: 0x" + Integer.toHexString(message.command));
       }
     }
+    
     if (message.command != AdbProtocol.CMD_CNXN) {
+      Logger.e(TAG, "Connection failed, expected CMD_CNXN (0x" + Integer.toHexString(AdbProtocol.CMD_CNXN) + 
+                 ") but got 0x" + Integer.toHexString(message.command));
       channel.close();
       throw new Exception("ADB连接失败");
     }
+    
     MAX_DATA = message.arg1;
+    Logger.i(TAG, "ADB connection established, MAX_DATA: " + MAX_DATA);
 
     handleInThread.setPriority(Thread.MAX_PRIORITY);
     handleInThread.start();
+    Logger.d(TAG, "handleInThread started");
   }
 
   private BufferStream open(String destination, boolean canMultipleSend) throws InterruptedException {
+    Logger.d(TAG, "Opening stream to: " + destination);
     int localId = localIdPool++ * (canMultipleSend ? 1 : -1);
     writeToChannel(AdbProtocol.generateOpen(localId, destination));
     BufferStream bufferStream;
@@ -65,21 +90,25 @@ public class Adb {
       bufferStream = openStreams.get(localId);
     } while (!isClosed && bufferStream == null);
     openStreams.remove(localId);
+    Logger.d(TAG, "Stream opened: " + destination + " (localId: " + localId + ")");
     return bufferStream;
   }
 
   public String restartOnTcpip(int port) throws InterruptedException {
+    Logger.i(TAG, "restartOnTcpip: " + port);
     BufferStream bufferStream = open("tcpip:" + port, false);
     do {
       synchronized (this) {
         wait();
       }
     } while (!bufferStream.isClosed());
-    return new String(bufferStream.readByteArrayBeforeClose().array());
+    String result = new String(bufferStream.readByteArrayBeforeClose().array());
+    Logger.i(TAG, "restartOnTcpip result: " + result);
+    return result;
   }
 
   public void pushFile(InputStream file, String remotePath, MyInterface.MyFunctionInt handleProcess) throws Exception {
-
+    Logger.i(TAG, "pushFile to: " + remotePath);
     BufferStream bufferStream = open("sync:", false);
 
     String sendString = remotePath + ",33206";
@@ -112,35 +141,51 @@ public class Adb {
         wait();
       }
     } while (!bufferStream.isClosed());
+    Logger.i(TAG, "pushFile completed: " + remotePath);
   }
 
   public String runAdbCmd(String cmd) throws Exception {
+    Logger.d(TAG, "runAdbCmd: " + cmd);
     BufferStream bufferStream = open("shell:" + cmd, true);
     do {
       synchronized (this) {
         wait();
       }
     } while (!bufferStream.isClosed());
-    return new String(bufferStream.readByteArrayBeforeClose().array());
+    String result = new String(bufferStream.readByteArrayBeforeClose().array());
+    Logger.d(TAG, "runAdbCmd result length: " + result.length());
+    return result;
   }
 
   public BufferStream getShell() throws InterruptedException {
+    Logger.d(TAG, "getShell");
     return open("shell:", true);
   }
 
   public BufferStream tcpForward(int port) throws IOException, InterruptedException {
+    Logger.d(TAG, "tcpForward: " + port);
     BufferStream bufferStream = open("tcp:" + port, true);
-    if (bufferStream.isClosed()) throw new IOException("error forward");
+    if (bufferStream.isClosed()) {
+      Logger.e(TAG, "tcpForward failed for port: " + port);
+      throw new IOException("error forward");
+    }
+    Logger.d(TAG, "tcpForward success for port: " + port);
     return bufferStream;
   }
 
   public BufferStream localSocketForward(String socketName) throws IOException, InterruptedException {
+    Logger.d(TAG, "localSocketForward: " + socketName);
     BufferStream bufferStream = open("localabstract:" + socketName, true);
-    if (bufferStream.isClosed()) throw new IOException("error forward");
+    if (bufferStream.isClosed()) {
+      Logger.e(TAG, "localSocketForward failed for: " + socketName);
+      throw new IOException("error forward");
+    }
+    Logger.d(TAG, "localSocketForward success for: " + socketName);
     return bufferStream;
   }
 
   private void handleIn() {
+    Logger.method(TAG, "handleIn");
     try {
       while (!Thread.interrupted()) {
         AdbProtocol.AdbMessage message = AdbProtocol.AdbMessage.parseAdbMessage(channel);
@@ -167,7 +212,8 @@ public class Adb {
           }
         }
       }
-    } catch (Exception ignored) {
+    } catch (Exception e) {
+      Logger.e(TAG, "handleIn error: " + e.getMessage(), e);
       close();
     }
   }
@@ -176,7 +222,8 @@ public class Adb {
     synchronized (channel) {
       try {
         channel.write(byteBuffer);
-      } catch (Exception ignored) {
+      } catch (Exception e) {
+        Logger.e(TAG, "writeToChannel error: " + e.getMessage());
         close();
       }
     }
@@ -219,12 +266,14 @@ public class Adb {
   public void close() {
     if (isClosed) return;
     isClosed = true;
+    Logger.i(TAG, "Closing ADB connection");
     handleInThread.interrupt();
     for (Object bufferStream : connectionStreams.values().toArray()) ((BufferStream) bufferStream).close();
     channel.close();
     synchronized (this) {
       notifyAll();
     }
+    Logger.i(TAG, "ADB connection closed");
   }
 
 }
