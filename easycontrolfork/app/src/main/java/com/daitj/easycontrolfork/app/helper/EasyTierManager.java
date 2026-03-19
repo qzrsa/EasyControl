@@ -9,8 +9,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import com.daitj.easycontrolfork.app.entity.AppData;
-
 /**
  * EasyTierManager
  * 负责：
@@ -23,7 +21,6 @@ public class EasyTierManager {
   private static final String TAG = "EasyTierManager";
   public static final String BINARY_NAME = "easytier-core";
 
-  // VPN 服务当前是否正在运行
   private static volatile boolean running = false;
 
   /**
@@ -34,7 +31,6 @@ public class EasyTierManager {
     File destDir = context.getFilesDir();
     File dest = new File(destDir, BINARY_NAME);
 
-    // 每次都重新拷贝，确保版本最新
     try (InputStream in = context.getAssets().open(BINARY_NAME);
          OutputStream out = new FileOutputStream(dest)) {
       byte[] buf = new byte[8192];
@@ -42,7 +38,6 @@ public class EasyTierManager {
       while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
     }
 
-    // 设置可执行权限
     if (!dest.setExecutable(true, true)) {
       Log.w(TAG, "setExecutable 失败，尝试 chmod");
       Runtime.getRuntime().exec(new String[]{"chmod", "700", dest.getAbsolutePath()}).waitFor();
@@ -63,15 +58,15 @@ public class EasyTierManager {
    * 启动 EasyTier VPN 服务。
    * 调用前必须已经通过 VpnService.prepare() 获得用户授权。
    *
-   * @param host     EasyTier peer 节点地址（如 47.105.67.198）
-   * @param port     EasyTier peer 节点端口（如 11010）
-   * @param key      EasyTier 网络密钥
+   * @param host     EasyTier 服务器，例如 tcp://47.105.67.198:11010
+   * @param networkName EasyTier 网络名称
+   * @param key      EasyTier 网络密码
    * @param virtualIpCallback 虚拟 IP 分配成功后的回调（在子线程调用）
    */
   public static void start(
     Context context,
     String host,
-    int port,
+    String networkName,
     String key,
     VirtualIpCallback virtualIpCallback
   ) {
@@ -79,10 +74,12 @@ public class EasyTierManager {
       Log.d(TAG, "EasyTier 已在运行，跳过重复启动");
       return;
     }
+
     Intent intent = new Intent(context, EasyTierVpnService.class);
     intent.putExtra(EasyTierVpnService.EXTRA_HOST, host);
-    intent.putExtra(EasyTierVpnService.EXTRA_PORT, port);
+    intent.putExtra(EasyTierVpnService.EXTRA_NETWORK_NAME, networkName);
     intent.putExtra(EasyTierVpnService.EXTRA_KEY, key);
+
     EasyTierVpnService.setVirtualIpCallback(virtualIpCallback);
     context.startForegroundService(intent);
     running = true;
@@ -105,9 +102,7 @@ public class EasyTierManager {
   }
 
   public interface VirtualIpCallback {
-    /** 虚拟 IP 分配成功 */
     void onVirtualIpReady(String virtualIp);
-    /** 启动失败 */
     void onError(String reason);
   }
 }
