@@ -32,7 +32,7 @@ public class DeviceDetailActivity extends Activity {
   private Device device;
 
   private EditText editDeviceRelayHost;
-  private EditText editDeviceRelayPort;
+  private EditText editDeviceRelayNetworkName;
   private EditText editDeviceRelayKey;
 
   @Override
@@ -241,20 +241,19 @@ public class DeviceDetailActivity extends Activity {
     );
 
     editDeviceRelayHost = new EditText(this);
-    editDeviceRelayHost.setHint("EasyTier 节点地址");
+    editDeviceRelayHost.setHint("EasyTier 服务器");
     editDeviceRelayHost.setText(device.relayHost);
     editDeviceRelayHost.setPadding(32, 16, 32, 16);
     activityDeviceDetailBinding.layoutOptionSub.addView(editDeviceRelayHost);
 
-    editDeviceRelayPort = new EditText(this);
-    editDeviceRelayPort.setHint("EasyTier 端口");
-    editDeviceRelayPort.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-    editDeviceRelayPort.setText(device.relayPort > 0 ? String.valueOf(device.relayPort) : "");
-    editDeviceRelayPort.setPadding(32, 16, 32, 16);
-    activityDeviceDetailBinding.layoutOptionSub.addView(editDeviceRelayPort);
+    editDeviceRelayNetworkName = new EditText(this);
+    editDeviceRelayNetworkName.setHint("EasyTier 网络名称");
+    editDeviceRelayNetworkName.setText(device.relayNetworkName);
+    editDeviceRelayNetworkName.setPadding(32, 16, 32, 16);
+    activityDeviceDetailBinding.layoutOptionSub.addView(editDeviceRelayNetworkName);
 
     editDeviceRelayKey = new EditText(this);
-    editDeviceRelayKey.setHint("EasyTier 网络密钥");
+    editDeviceRelayKey.setHint("EasyTier 网络密码");
     editDeviceRelayKey.setText(device.relayKey);
     editDeviceRelayKey.setPadding(32, 16, 32, 16);
     activityDeviceDetailBinding.layoutOptionSub.addView(editDeviceRelayKey);
@@ -290,12 +289,7 @@ public class DeviceDetailActivity extends Activity {
       }
 
       device.relayHost = editDeviceRelayHost.getText().toString().trim();
-      String relayPortStr = editDeviceRelayPort.getText().toString().trim();
-      try {
-        device.relayPort = Integer.parseInt(relayPortStr);
-      } catch (Exception ignored) {
-        device.relayPort = 11010;
-      }
+      device.relayNetworkName = editDeviceRelayNetworkName.getText().toString().trim();
       device.relayKey = editDeviceRelayKey.getText().toString().trim();
 
       if (isNew) AppData.dbHelper.insert(device);
