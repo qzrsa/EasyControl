@@ -2,7 +2,6 @@ package com.daitj.easycontrolfork.app;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.text.InputType;
 import android.view.Gravity;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -19,7 +18,7 @@ public class SetActivity extends Activity {
   private ActivitySetBinding activitySetBinding;
 
   private EditText editEasyTierHost;
-  private EditText editEasyTierPort;
+  private EditText editEasyTierNetworkName;
   private EditText editEasyTierKey;
 
   @Override
@@ -67,21 +66,19 @@ public class SetActivity extends Activity {
     ).getRoot());
 
     editEasyTierHost = new EditText(this);
-    editEasyTierHost.setHint(getString(R.string.device_easytier_host_hint));
+    editEasyTierHost.setHint("EasyTier 服务器");
     editEasyTierHost.setText(AppData.setting.getDefaultRelayHost());
     editEasyTierHost.setPadding(32, 24, 32, 24);
     root.addView(editEasyTierHost);
 
-    editEasyTierPort = new EditText(this);
-    editEasyTierPort.setHint(getString(R.string.device_easytier_port_hint));
-    editEasyTierPort.setInputType(InputType.TYPE_CLASS_NUMBER);
-    int savedPort = AppData.setting.getDefaultRelayPort();
-    editEasyTierPort.setText(savedPort > 0 ? String.valueOf(savedPort) : "11010");
-    editEasyTierPort.setPadding(32, 24, 32, 24);
-    root.addView(editEasyTierPort);
+    editEasyTierNetworkName = new EditText(this);
+    editEasyTierNetworkName.setHint("EasyTier 网络名称");
+    editEasyTierNetworkName.setText(AppData.setting.getDefaultRelayNetworkName());
+    editEasyTierNetworkName.setPadding(32, 24, 32, 24);
+    root.addView(editEasyTierNetworkName);
 
     editEasyTierKey = new EditText(this);
-    editEasyTierKey.setHint(getString(R.string.device_easytier_key_hint));
+    editEasyTierKey.setHint("EasyTier 网络密码");
     editEasyTierKey.setText(AppData.setting.getDefaultRelayKey());
     editEasyTierKey.setPadding(32, 24, 32, 24);
     root.addView(editEasyTierKey);
@@ -110,21 +107,11 @@ public class SetActivity extends Activity {
 
   private void saveSettings() {
     String host = editEasyTierHost.getText().toString().trim();
-    String portText = editEasyTierPort.getText().toString().trim();
+    String networkName = editEasyTierNetworkName.getText().toString().trim();
     String key = editEasyTierKey.getText().toString().trim();
 
-    int port = 11010;
-    if (!portText.isEmpty()) {
-      try {
-        port = Integer.parseInt(portText);
-      } catch (Exception e) {
-        Toast.makeText(this, getString(R.string.toast_invalid_port_fallback), Toast.LENGTH_SHORT).show();
-        port = 11010;
-      }
-    }
-
     AppData.setting.setDefaultRelayHost(host);
-    AppData.setting.setDefaultRelayPort(port);
+    AppData.setting.setDefaultRelayNetworkName(networkName);
     AppData.setting.setDefaultRelayKey(key);
 
     Toast.makeText(this, getString(R.string.toast_setting_saved), Toast.LENGTH_SHORT).show();
