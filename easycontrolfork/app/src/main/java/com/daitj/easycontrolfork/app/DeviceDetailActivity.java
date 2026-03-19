@@ -114,7 +114,7 @@ public class DeviceDetailActivity extends Activity {
   /**
    * 添加连接模式设置
    */
-  private ViewGroup relaySettingsLayout;
+  private LinearLayout relaySettingsLayout;
   private EditText relayServerInput;
   private EditText relayPortInput;
   private EditText relayTokenInput;
