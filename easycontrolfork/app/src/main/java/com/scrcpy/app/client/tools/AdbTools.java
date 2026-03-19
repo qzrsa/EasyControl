@@ -12,49 +12,71 @@ import com.scrcpy.app.adb.Adb;
 import com.scrcpy.app.entity.AppData;
 import com.scrcpy.app.entity.Device;
 import com.scrcpy.app.entity.MyInterface;
+import com.scrcpy.app.helper.Logger;
 import com.scrcpy.app.helper.PublicTools;
 
 public class AdbTools {
+  private static final String TAG = "AdbTools";
+  
   private static final HashMap<String, Adb> allAdbConnect = new HashMap<>();
   public static final ArrayList<Device> devicesList = new ArrayList<>();
   public static final HashMap<String, UsbDevice> usbDevicesList = new HashMap<>();
 
   public static Adb connectADB(Device device) throws Exception {
     String addressId = device.isLinkDevice() ? device.address : device.address + ":" + device.adbPort;
+    Logger.i(TAG, "Connecting ADB to: " + addressId + " (device: " + device.name + ")");
+    
     Adb adb = allAdbConnect.get(addressId);
     if (adb == null || adb.isClosed()) {
-      if (device.isLinkDevice()) adb = new Adb(usbDevicesList.get(addressId), AppData.keyPair);
-      else adb = new Adb(PublicTools.getIp(device.address), device.adbPort, AppData.keyPair);
+      Logger.d(TAG, "Creating new ADB connection for: " + addressId);
+      if (device.isLinkDevice()) {
+        adb = new Adb(usbDevicesList.get(addressId), AppData.keyPair);
+        Logger.i(TAG, "USB ADB connection established");
+      } else {
+        adb = new Adb(PublicTools.getIp(device.address), device.adbPort, AppData.keyPair);
+        Logger.i(TAG, "TCP ADB connection established");
+      }
       allAdbConnect.put(addressId, adb);
+    } else {
+      Logger.d(TAG, "Reusing existing ADB connection");
     }
     return adb;
   }
 
   public static void runOnceCmd(Device device, String cmd, MyInterface.MyFunctionBoolean handle) {
+    Logger.i(TAG, "runOnceCmd - device: " + device.name + ", cmd: " + cmd);
     new Thread(() -> {
       try {
         Adb adb = connectADB(device);
         adb.runAdbCmd(cmd);
+        Logger.operation(TAG, "runOnceCmd: " + cmd, true);
         handle.run(true);
-      } catch (Exception ignored) {
+      } catch (Exception e) {
+        Logger.e(TAG, "runOnceCmd failed: " + e.getMessage(), e);
         handle.run(false);
       }
     }).start();
   }
 
   public static void restartOnTcpip(Device device, MyInterface.MyFunctionBoolean handle) {
+    Logger.i(TAG, "restartOnTcpip - device: " + device.name);
     new Thread(() -> {
       try {
         Adb adb = connectADB(device);
         String output = adb.restartOnTcpip(5555);
-        handle.run(output.contains("restarting"));
-      } catch (Exception ignored) {
+        boolean success = output.contains("restarting");
+        Logger.i(TAG, "restartOnTcpip output: " + output);
+        Logger.operation(TAG, "restartOnTcpip", success);
+        handle.run(success);
+      } catch (Exception e) {
+        Logger.e(TAG, "restartOnTcpip failed: " + e.getMessage(), e);
         handle.run(false);
       }
     }).start();
   }
 
   public static void pushFile(Device device, InputStream file, String fileName, MyInterface.MyFunctionInt handleProcess) {
+    Logger.i(TAG, "pushFile - device: " + device.name + ", file: " + fileName);
     new Thread(() -> {
       try {
         String tempFileName = fileName;
@@ -63,9 +85,12 @@ public class AdbTools {
         if (!Pattern.compile("^[a-zA-Z0-9\\(\\)\\-\\_\\[\\]\\.]+$").matcher(tempFileName).matches()) {
           int dotIndex = tempFileName.lastIndexOf(".");
           tempFileName = UUID.randomUUID() + (dotIndex == -1 ? "" : tempFileName.substring(dotIndex));
+          Logger.d(TAG, "Renamed file to: " + tempFileName);
         }
         adb.pushFile(file, "/sdcard/Download/Easycontrol/" + tempFileName, handleProcess);
-      } catch (Exception ignored) {
+        Logger.i(TAG, "File pushed successfully: " + tempFileName);
+      } catch (Exception e) {
+        Logger.e(TAG, "pushFile failed: " + e.getMessage(), e);
         handleProcess.run(-1);
       }
     }).start();

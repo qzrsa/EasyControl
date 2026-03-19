@@ -12,6 +12,7 @@ import android.view.WindowManager;
 import com.scrcpy.app.MainActivity;
 import com.scrcpy.app.adb.AdbKeyPair;
 import com.scrcpy.app.helper.DbHelper;
+import com.scrcpy.app.helper.Logger;
 import com.scrcpy.app.helper.PublicTools;
 
 public class AppData {
@@ -44,7 +45,12 @@ public class AppData {
     sensorManager = (SensorManager) applicationContext.getSystemService(Context.SENSOR_SERVICE);
     setting = new Setting(applicationContext.getSharedPreferences("setting", Context.MODE_PRIVATE));
 
+    // Initialize logger
+    Logger.init(applicationContext);
+
     keyPair = PublicTools.readAdbKeyPair();
+    
+    Logger.i("AppData", "Application initialized");
   }
 
 }
