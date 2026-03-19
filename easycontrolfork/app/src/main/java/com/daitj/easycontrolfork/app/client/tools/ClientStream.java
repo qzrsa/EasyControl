@@ -12,6 +12,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
@@ -52,11 +54,15 @@ public class ClientStream {
   private static int debugLogIndex = 0;
   private static int debugLogCount = 0;
 
+  private static final int LOG_RETAIN_DAYS = 10;
+  private static final String LOG_PREFIX = "clientstream_";
+  private static final String LOG_SUFFIX = ".log";
+
   private static final SimpleDateFormat lineSdf = new SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault());
-  private static final SimpleDateFormat fileSdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault());
+  private static final SimpleDateFormat fileSdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
   private static File logFile = null;
-  private static String firstLogTime = null;
+  private static String logFileDay = null;
 
   public StatsOverlay getStatsOverlay() {
     return statsOverlay;
@@ -64,20 +70,48 @@ public class ClientStream {
 
   private static String getLogDir() {
     try {
-      File dir = AppData.applicationContext.getExternalFilesDir(null);
-      if (dir != null) return dir.getAbsolutePath() + "/";
+      File baseDir = AppData.applicationContext.getExternalFilesDir(null);
+      if (baseDir != null) {
+        File dir = new File(baseDir, "logs");
+        if (!dir.exists()) dir.mkdirs();
+        return dir.getAbsolutePath() + "/";
+      }
     } catch (Exception ignored) {}
     return "/storage/emulated/0/Download/";
   }
 
   private static synchronized void ensureLogFile() {
     try {
-      if (logFile != null) return;
-      if (firstLogTime == null) firstLogTime = fileSdf.format(new Date());
+      String today = fileSdf.format(new Date());
+
+      if (logFile != null && today.equals(logFileDay) && logFile.exists()) return;
+
       File dir = new File(getLogDir());
       if (!dir.exists()) dir.mkdirs();
-      logFile = new File(dir, "clientstream_" + firstLogTime + ".log");
+
+      cleanupOldLogs(dir);
+
+      logFileDay = today;
+      logFile = new File(dir, LOG_PREFIX + today + LOG_SUFFIX);
       if (!logFile.exists()) logFile.createNewFile();
+    } catch (Exception ignored) {}
+  }
+
+  private static synchronized void cleanupOldLogs(File dir) {
+    try {
+      File[] files = dir.listFiles((d, name) ->
+        name != null && name.startsWith(LOG_PREFIX) && name.endsWith(LOG_SUFFIX)
+      );
+      if (files == null || files.length <= LOG_RETAIN_DAYS) return;
+
+      Arrays.sort(files, Comparator.comparing(File::getName));
+
+      int deleteCount = files.length - LOG_RETAIN_DAYS;
+      for (int i = 0; i < deleteCount; i++) {
+        try {
+          files[i].delete();
+        } catch (Exception ignored) {}
+      }
     } catch (Exception ignored) {}
   }
 
@@ -92,13 +126,28 @@ public class ClientStream {
     } catch (Exception ignored) {}
   }
 
+  private static boolean shouldToast(String msg) {
+    if (msg == null) return false;
+    return msg.contains("开始连接")
+      || msg.contains("ADB 连接成功")
+      || msg.contains("服务端启动流程完成")
+      || msg.contains("启动失败")
+      || msg.contains("虚拟 IP 已分配")
+      || msg.contains("连接完成")
+      || msg.contains("超时")
+      || msg.contains("失败异常");
+  }
+
   private static synchronized void addDebugLog(String msg) {
     String line = "[" + lineSdf.format(new Date()) + "] " + msg;
     debugLogs[debugLogIndex] = line;
     debugLogIndex = (debugLogIndex + 1) % 10;
     if (debugLogCount < 10) debugLogCount++;
     writeLogToFile(line);
-    PublicTools.logToast("stream", line, true);
+
+    if (shouldToast(msg)) {
+      PublicTools.logToast("stream", line, true);
+    }
   }
 
   public static synchronized String getDebugLogs() {
@@ -114,8 +163,6 @@ public class ClientStream {
     for (int i = 0; i < 10; i++) debugLogs[i] = null;
     debugLogIndex = 0;
     debugLogCount = 0;
-    logFile = null;
-    firstLogTime = null;
   }
 
   public ClientStream(Device device, MyInterface.MyFunctionBoolean handle) {
@@ -251,15 +298,15 @@ public class ClientStream {
       try {
         String key = AppData.setting.getDefaultRelayKey();
         if (key != null) {
-          addDebugLog("【配置】使用全局 EasyTier 网络密鑐长度=" + key.length());
+          addDebugLog("【配置】使用全局 EasyTier 网络密钥长度=" + key.length());
           return key;
         }
       } catch (Exception e) {
-        addDebugLog("【配置】读取全局 EasyTier 网络密鑐失败=" + e);
+        addDebugLog("【配置】读取全局 EasyTier 网络密钥失败=" + e);
       }
     }
     String key = device.relayKey != null ? device.relayKey : "";
-    addDebugLog("【配置】使用设备 EasyTier 网络密鑐长度=" + key.length());
+    addDebugLog("【配置】使用设备 EasyTier 网络密钥长度=" + key.length());
     return key;
   }
 
@@ -311,7 +358,7 @@ public class ClientStream {
       return;
     }
 
-    addDebugLog("【connectServer】未知模式，包底走直连");
+    addDebugLog("【connectServer】未知模式，兜底走直连");
     connectDirectOrAdb(device, reTry, reTryTime);
   }
 
@@ -332,14 +379,11 @@ public class ClientStream {
 
     addDebugLog("【EasyTier】开始启动 VPN 服务 host=" + relayHost + " port=" + relayPort);
 
-    // 检查 VPN 权限
     Intent vpnIntent = VpnService.prepare(AppData.applicationContext);
     if (vpnIntent != null) {
-      // 需要用户授权，暂时抛异常提示（后续在 Activity 层面处理弹出请求）
       throw new Exception("需要用户授予 VPN 权限，请在设置界面开启 VPN 权限后重试");
     }
 
-    // 启动 EasyTier VPN 服务，等待虚拟 IP
     final String[] virtualIp = {null};
     final String[] errorMsg = {null};
     final CountDownLatch latch = new CountDownLatch(1);
@@ -356,6 +400,7 @@ public class ClientStream {
           virtualIp[0] = ip;
           latch.countDown();
         }
+
         @Override
         public void onError(String reason) {
           addDebugLog("【EasyTier】启动失败: " + reason);
@@ -365,7 +410,6 @@ public class ClientStream {
       }
     );
 
-    // 最多等 12 秒等待虚拟 IP
     addDebugLog("【EasyTier】等待虚拟 IP 分配...");
     boolean assigned = latch.await(12, TimeUnit.SECONDS);
 
