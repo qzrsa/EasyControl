@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">易控Scrcpy</string>
-  <string name="app_name_simple">易控Scrcpy</string>
-  <string name="app_name_dev">易控Scrcpy</string>
+  <string name="app_name">Scrcpy</string>
+  <string name="app_name_simple">Scrcpy</string>
+  <string name="app_name_dev">Scrcpy</string>
 
   <!-- 主页 -->
   <string name="main_poem">春色三分，二分尘土，一分流水</string>
@@ -90,6 +90,30 @@
   <string name="device_connect_on_start">软件启动时打开</string>
   <string name="device_connect_on_start_detail">软件启动时自动连接该设备，可以设置多个设备自启动</string>
 
+  <!-- EasyTier 虚拟组网 -->
+  <string name="device_use_global_easytier">使用全局 EasyTier 配置</string>
+  <string name="device_use_global_easytier_detail">开启后使用全局设置中的连接模式和 EasyTier 配置</string>
+
+  <string name="device_conn_mode">连接模式</string>
+  <string name="device_conn_mode_detail">为该设备单独选择连接方式</string>
+  <string name="device_conn_mode_direct">直接连接</string>
+  <string name="device_conn_mode_auto">自动切换：先直连，失败后走 EasyTier 虚拟组网</string>
+  <string name="device_conn_mode_easytier">强制 EasyTier 虚拟组网</string>
+
+  <string name="device_easytier_host_hint">EasyTier 节点地址</string>
+  <string name="device_easytier_port_hint">EasyTier 端口</string>
+  <string name="device_easytier_key_hint">EasyTier 网络密钥</string>
+
+  <string name="set_default_conn_mode">默认连接模式</string>
+  <string name="set_default_conn_mode_detail">用于未单独指定连接方式的设备。EasyTier 是去中心化虚拟组网，不是传统固定服务器中转。</string>
+  <string name="set_easytier_note">说明：当前版本这里只是为 EasyTier 接入预留配置项。现阶段语义已切换，但应用内还没有真正内置或拉起 EasyTier 节点能力。</string>
+
+  <string name="toast_invalid_port_fallback">端口格式错误，已使用默认值 11010</string>
+  <string name="toast_setting_saved">设置已保存</string>
+
+  <string name="error_easytier_host_empty">EasyTier 节点地址未配置，请先在设置中填写节点地址</string>
+  <string name="error_easytier_connect_fail">EasyTier 虚拟组网连接失败，请检查节点地址和端口</string>
+
   <string name="device_button">确认</string>
 
   <!-- 设备设置模块 -->
@@ -115,5 +139,4 @@
   <string name="toast_connect_server">连接被控端失败</string>
   <string name="toast_stream_closed">连接断开</string>
   <string name="toast_float_per">需要悬浮窗权限</string>
-
 </resources>
