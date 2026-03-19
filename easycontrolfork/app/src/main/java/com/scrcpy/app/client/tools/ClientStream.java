@@ -103,6 +103,8 @@ public class ClientStream {
     }
     
     shell = adb.getShell();
+    
+    // Try with full path to app_process
     String cmd = "app_process -Djava.class.path=" + serverName + " / com.scrcpy.server.Server"
       + " serverPort=" + device.serverPort
       + " listenClip=" + (device.listenClip ? 1 : 0)
@@ -118,9 +120,19 @@ public class ClientStream {
     Logger.d(TAG, "Starting server with command: " + cmd.trim());
     shell.write(ByteBuffer.wrap(cmd.getBytes()));
     
-    // Wait a bit and check for server output/errors
-    Thread.sleep(100);
+    // Wait longer for server to initialize
+    Thread.sleep(1000);
     Logger.i(TAG, "Server command sent, waiting for startup...");
+    
+    // Try to read any error output
+    try {
+      String errorLog = adb.runAdbCmd("cat /data/local/tmp/server.log 2>/dev/null || echo 'No log file'");
+      if (errorLog != null && !errorLog.isEmpty()) {
+        Logger.e(TAG, "Server log: " + errorLog);
+      }
+    } catch (Exception e) {
+      Logger.d(TAG, "Could not read server log: " + e.getMessage());
+    }
   }
 
   private void connectServer(Device device) throws Exception {
