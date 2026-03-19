@@ -18,6 +18,11 @@ on:
         required: false
         default: ''
         type: string
+      full_release:
+        description: 'Publish as Full Release (uncheck for prerelease)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build:
@@ -104,7 +109,7 @@ jobs:
             Build Date: ${{ steps.tag.outputs.release_date }}
             Note: ${{ inputs.note }}
           draft: false
-          prerelease: false
+          prerelease: ${{ inputs.full_release == false }}
           files: release/EasyControl.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
