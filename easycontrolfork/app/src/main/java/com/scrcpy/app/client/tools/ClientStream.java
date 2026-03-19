@@ -105,8 +105,15 @@ public class ClientStream {
     adb.pushFile(AppData.applicationContext.getResources().openRawResource(R.raw.easycontrolfork_server), serverName, null);
     Logger.i(TAG, "Server file pushed successfully");
     
-    // Start server with nohup to capture output
-    String cmd = "nohup /system/bin/app_process -Djava.class.path=" + serverName + " / com.scrcpy.server.Server"
+    // Start server with nohup to capture output - try app_process first, then dalvikvm
+    String binary = "/system/bin/app_process";
+    String testBinary = adb.runAdbCmd("ls " + binary + " 2>/dev/null || ls /system/bin/dalvikvm 2>/dev/null || echo 'not found'");
+    if (testBinary != null && testBinary.contains("not found")) {
+      binary = "/system/bin/dalvikvm";
+    }
+    Logger.d(TAG, "Using binary: " + binary);
+    
+    String cmd = "nohup " + binary + " -classpath " + serverName + " com.scrcpy.server.Server"
       + " serverPort=" + device.serverPort
       + " listenClip=" + (device.listenClip ? 1 : 0)
       + " isAudio=" + (device.isAudio ? 1 : 0)
