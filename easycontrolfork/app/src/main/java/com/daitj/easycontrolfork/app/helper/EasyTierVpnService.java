@@ -22,8 +22,9 @@ public class EasyTierVpnService extends VpnService {
   private static final String TAG = "EasyTierVpnService";
   public static final String ACTION_STOP = "com.daitj.easycontrolfork.STOP_EASYTIER";
   public static final String EXTRA_HOST = "extra_host";
-  public static final String EXTRA_PORT = "extra_port";
+  public static final String EXTRA_PORT = "extra_port"; // 兼容旧调用，当前已不再使用
   public static final String EXTRA_KEY = "extra_key";
+  public static final String EXTRA_NETWORK_NAME = "extra_network_name";
   private static final String CHANNEL_ID = "easytier_vpn";
   private static final int NOTIF_ID = 1001;
 
@@ -45,17 +46,17 @@ public class EasyTierVpnService extends VpnService {
     }
 
     String host = intent != null ? intent.getStringExtra(EXTRA_HOST) : "";
-    int port = intent != null ? intent.getIntExtra(EXTRA_PORT, 11010) : 11010;
+    String networkName = intent != null ? intent.getStringExtra(EXTRA_NETWORK_NAME) : "";
     String key = intent != null ? intent.getStringExtra(EXTRA_KEY) : "";
 
     startForeground(NOTIF_ID, buildNotification());
 
-    new Thread(() -> startEasyTier(host, port, key)).start();
+    new Thread(() -> startEasyTier(host, networkName, key)).start();
 
     return START_STICKY;
   }
 
-  private void startEasyTier(String host, int port, String key) {
+  private void startEasyTier(String host, String networkName, String key) {
     try {
       File binary = EasyTierManager.prepareBinary(this);
       Log.d(TAG, "binary 就绪: " + binary.getAbsolutePath());
@@ -78,16 +79,24 @@ public class EasyTierVpnService extends VpnService {
 
       Log.d(TAG, "TUN fd = " + tunFd.getFd());
 
+      if (host == null || host.trim().isEmpty()) {
+        throw new Exception("EasyTier 服务器不能为空");
+      }
+
+      String finalNetworkName = (networkName != null && !networkName.trim().isEmpty())
+        ? networkName.trim()
+        : "default";
+      String finalKey = key != null ? key.trim() : "";
+
       List<String> cmd = new ArrayList<>();
       cmd.add(binary.getAbsolutePath());
-      cmd.add("--peer");
-      cmd.add("tcp://" + host + ":" + port);
+      cmd.add("--peers");
+      cmd.add(host.trim());
       cmd.add("--network-name");
-      cmd.add(key != null && !key.isEmpty() ? key : "default");
+      cmd.add(finalNetworkName);
       cmd.add("--network-secret");
-      cmd.add(key != null ? key : "");
-      cmd.add("--ipv4");
-      cmd.add("dhcp");
+      cmd.add(finalKey);
+      cmd.add("--dhcp");
       cmd.add("--tun-fd");
       cmd.add(String.valueOf(tunFd.getFd()));
       cmd.add("--no-listener");
@@ -141,7 +150,9 @@ public class EasyTierVpnService extends VpnService {
       "assigned virtual ip:",
       "my_ipv4:",
       "virtual_ip:",
-      "ipv4 addr:"
+      "ipv4 addr:",
+      "virtual ipv4:",
+      "dhcp ip:"
     };
 
     for (String kw : keywords) {
