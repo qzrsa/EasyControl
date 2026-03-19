@@ -122,7 +122,8 @@ public class ClientStream {
   private void connectServer(Device device) throws Exception {
     Logger.method(TAG, "connectServer");
     
-    Thread.sleep(50);
+    // Wait longer for server to start (increased from 50ms to 500ms)
+    Thread.sleep(500);
     int reTry = 40;
     int reTryTime = timeoutDelay / reTry;
     

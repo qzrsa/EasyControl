@@ -26,6 +26,8 @@ import com.scrcpy.server.wrappers.SurfaceControl;
 import com.scrcpy.server.wrappers.WindowManager;
 
 public final class Server {
+  private static final String TAG = "Server";
+  
   private static Socket mainSocket;
   private static Socket videoSocket;
   private static OutputStream mainOutputStream;
@@ -35,12 +37,18 @@ public final class Server {
   private static final Object object = new Object();
 
   private static final int timeoutDelay = 1000 * 20;
+  
+  private static void log(String message) {
+    System.out.println("[" + TAG + "] " + message);
+  }
 
   public static void main(String... args) {
     try {
+      log("Server starting...");
       Thread timeOutThread = new Thread(() -> {
         try {
           Thread.sleep(timeoutDelay);
+          log("Timeout, releasing...");
           release();
         } catch (InterruptedException ignored) {
         }
@@ -48,14 +56,22 @@ public final class Server {
       timeOutThread.start();
 
       Options.parse(args);
+      log("Options parsed - serverPort: " + Options.serverPort);
 
       setManagers();
+      log("Managers initialized");
+      
       Device.init();
+      log("Device initialized");
 
+      log("Waiting for client connection on port " + Options.serverPort);
       connectClient();
+      log("Client connected!");
 
       boolean canAudio = AudioEncode.init();
+      log("Audio init: " + canAudio);
       VideoEncode.init();
+      log("Video initialized");
 
       ArrayList<Thread> threads = new ArrayList<>();
       threads.add(new Thread(Server::executeVideoOut));
@@ -66,6 +82,7 @@ public final class Server {
       threads.add(new Thread(Server::executeControlIn));
       for (Thread thread : threads) thread.setPriority(Thread.MAX_PRIORITY);
       for (Thread thread : threads) thread.start();
+      log("All threads started, server running");
 
       timeOutThread.interrupt();
       synchronized (object) {
@@ -74,6 +91,7 @@ public final class Server {
 
       for (Thread thread : threads) thread.interrupt();
     } catch (Exception e) {
+      log("Error: " + e.getMessage());
       e.printStackTrace();
     } finally {
 
