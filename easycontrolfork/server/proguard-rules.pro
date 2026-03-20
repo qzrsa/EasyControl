@@ -19,9 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
--keep class com.daitj.easycontrolfork.server.Server {
+-keep class com.scrcpy.server.Server {
     main(java.lang.String[]);
 }
 -keep class android.content.IOnPrimaryClipChangedListener{*;}
 -keep class android.view.IRotationWatcher{*;}
--keep class com.daitj.easycontrolfork.server.helper.FakeContext{*;}
+-keep class com.scrcpy.server.helper.FakeContext{*;}
