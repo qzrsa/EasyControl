@@ -105,15 +105,15 @@ public class ClientStream {
     adb.pushFile(AppData.applicationContext.getResources().openRawResource(R.raw.easycontrolfork_server), serverName, null);
     Logger.i(TAG, "Server file pushed successfully");
     
-    // Try starting via runAdbCmd instead of shell stream
+    // Try starting via runAdbCmd - redirect output to file
     String binary = "/system/bin/app_process64";
     String cmd = binary + " -classpath " + serverName + " com.scrcpy.server.Server serverPort=" + device.serverPort;
     
-    Logger.d(TAG, "Trying via runAdbCmd: " + cmd);
+    Logger.d(TAG, "Starting with output redirect: " + cmd);
     
-    // Run in background via runAdbCmd
+    // Run in background with output redirect
     try {
-      String result = adb.runAdbCmd(cmd + " &");
+      String result = adb.runAdbCmd(cmd + " > /data/local/tmp/server_out.log 2>&1 &");
       Logger.d(TAG, "runAdbCmd result: " + (result != null ? result : "null"));
     } catch (Exception e) {
       Logger.e(TAG, "runAdbCmd error: " + e.getMessage());
@@ -130,6 +130,10 @@ public class ClientStream {
       // Check if port is listening
       String netstat = adb.runAdbCmd("netstat -tlnp 2>/dev/null | grep 25166 || ss -tlnp | grep 25166 || echo 'Port not listening'");
       Logger.d(TAG, "Port 25166 status: " + (netstat != null ? netstat.trim() : "none"));
+      
+      // Read server output
+      String serverOut = adb.runAdbCmd("cat /data/local/tmp/server_out.log 2>/dev/null || echo 'No output'");
+      Logger.d(TAG, "Server output: " + (serverOut != null ? serverOut.trim() : "none"));
     } catch (Exception e) {
       Logger.e(TAG, "Check error: " + e.getMessage());
     }
