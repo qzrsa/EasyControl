@@ -119,13 +119,17 @@ public class ClientStream {
       Logger.e(TAG, "runAdbCmd error: " + e.getMessage());
     }
     
-    // Wait
-    Thread.sleep(2000);
+    // Wait longer for server to start
+    Thread.sleep(5000);
     
     // Check
     try {
       String psResult = adb.runAdbCmd("ps -A | grep -E 'app_process|scrcpy' || echo 'No process'");
-      Logger.d(TAG, "Process: " + (psResult != null ? psResult.trim() : "none"));
+      Logger.d(TAG, "Process after 5s: " + (psResult != null ? psResult.trim() : "none"));
+      
+      // Check if port is listening
+      String netstat = adb.runAdbCmd("netstat -tlnp 2>/dev/null | grep 25166 || ss -tlnp | grep 25166 || echo 'Port not listening'");
+      Logger.d(TAG, "Port 25166 status: " + (netstat != null ? netstat.trim() : "none"));
     } catch (Exception e) {
       Logger.e(TAG, "Check error: " + e.getMessage());
     }
