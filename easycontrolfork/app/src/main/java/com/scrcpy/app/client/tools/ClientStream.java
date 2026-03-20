@@ -95,10 +95,13 @@ public class ClientStream {
     boolean needPush = true;
     Logger.d(TAG, "Need to push server: " + needPush + " (forced for package migration)");
     
-    // Delete old server file using shell stream (not runAdbCmd to avoid blocking)
-    shell = adb.getShell();
-    shell.write(ByteBuffer.wrap("rm -f /data/local/tmp/easycontrolfork_*\n".getBytes()));
-    Thread.sleep(100);
+    // Delete old server file using runAdbCmd (blocking) to avoid race condition
+    try {
+      String rmResult = adb.runAdbCmd("rm -f /data/local/tmp/easycontrolfork_*");
+      Logger.d(TAG, "rm result: " + (rmResult != null ? rmResult.trim() : "done"));
+    } catch (Exception e) {
+      Logger.d(TAG, "rm warning: " + e.getMessage());
+    }
     
     // Push new server file
     Logger.d(TAG, "Pushing server file: " + serverName);
