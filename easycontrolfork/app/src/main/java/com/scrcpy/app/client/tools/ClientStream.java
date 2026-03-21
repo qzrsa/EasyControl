@@ -110,7 +110,7 @@ public class ClientStream {
     
     // Try starting via runAdbCmd - redirect output to file
     String binary = "/system/bin/app_process64";
-    String cmd = binary + " -classpath " + serverName + " com.scrcpy.server.Server serverPort " + device.serverPort;
+    String cmd = binary + " -classpath " + serverName + " com.scrcpy.server.Server serverPort=" + device.serverPort;
     
     Logger.d(TAG, "Starting with output redirect: " + cmd);
     
